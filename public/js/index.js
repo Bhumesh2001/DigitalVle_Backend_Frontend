@@ -1756,17 +1756,29 @@ const latestUsers = [
     { name: "Priya Desai", email: "priya@example.com" },
 ];
 
-const listEl = document.getElementById("latestUsers");
-latestUsers.forEach((user, index) => {
-    const item = document.createElement("li");
-    item.className =
-        "list-group-item bg-dark text-white d-flex justify-content-between align-items-center";
-    item.innerHTML = `
-    <div>
-      <strong>${user.name}</strong><br />
-      <small>${user.email}</small>
-    </div>
-    <span class="badge bg-primary rounded-pill">#${index + 1}</span>
-  `;
-    listEl.appendChild(item);
+document.addEventListener("DOMContentLoaded", () => {
+    const latestUsers = [
+        { name: "Bhumesh Kewat", email: "bhumesh@example.com" },
+        { name: "Ravi Sharma", email: "ravi@example.com" },
+        { name: "Sneha Patel", email: "sneha@example.com" },
+        { name: "Aman Verma", email: "aman@example.com" },
+        { name: "Priya Desai", email: "priya@example.com" },
+    ];
+
+    const listEl = document.getElementById("latestUsers");
+    if (listEl) {
+        latestUsers.forEach((user, index) => {
+            const item = document.createElement("li");
+            item.className =
+                "list-group-item bg-dark text-white d-flex justify-content-between align-items-center";
+            item.innerHTML = `
+                <div>
+                    <strong>${user.name}</strong><br />
+                    <small>${user.email}</small>
+                </div>
+                <span class="badge bg-primary rounded-pill">#${index + 1}</span>
+            `;
+            listEl.appendChild(item);
+        });
+    }
 });
