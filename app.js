@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require('path');
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 const fileUpload = require("express-fileupload");
@@ -13,12 +14,16 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: "http://localhost:5001",
+    origin: "http://localhost:5000",
     credentials: true,
 }));
 app.use(fileUpload({ useTempFiles: true, tempFileDir: "/tmp/" }));
+app.set("view engine", "ejs");
+app.use(express.static(path.join(__dirname, "public")));
 
 // Routes
+app.get('/', (req, res) => res.send('🎉 Welcome to the Independent Digital Vle!'));
+app.use('/admin', require('./routes/pageRoutes'));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/articles", require("./routes/articleRoutes"));
 app.use('/api/stories', require('./routes/storyRoutes'));
@@ -43,4 +48,4 @@ app.use(errorHandler);
 // Connect to DB & Start Server
 connectDB();
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
