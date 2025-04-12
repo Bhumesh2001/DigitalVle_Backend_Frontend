@@ -102,9 +102,7 @@ app.use('/api/admin-stories', require('./routes/adminStoryRoutes'));
 app.use("/api/admin-users", require("./routes/adminUserRoutes"));
 
 // 404 Not Found Handler
-app.use((req, res, next) => {
-    res.status(404).render("404");
-});
+app.use((req, res, next) => res.render("404"));
 
 // Global Error Handler (Always at the end)
 app.use(errorHandler);
