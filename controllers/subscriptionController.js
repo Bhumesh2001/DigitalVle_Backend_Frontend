@@ -1,5 +1,4 @@
 const Razorpay = require("razorpay");
-require('dotenv').config();
 const Subscription = require("../models/subscriptionModel");
 const SubscriptionPlan = require("../models/subscriptionPlanModel");
 const { successResponse, errorResponse } = require("../utils/responseHandler");
