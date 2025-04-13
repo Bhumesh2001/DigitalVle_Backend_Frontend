@@ -9,6 +9,7 @@ const morgan = require("morgan");
 
 const connectDB = require("./config/db");
 const errorHandler = require("./middlewares/errorMiddleware");
+const { helmetContent } = require('./utils/helmetUtils');
 
 dotenv.config();
 const app = express();
@@ -28,48 +29,7 @@ app.use(helmet());
 app.use(morgan("dev"));
 
 // Secure CSP with all allowed sources
-app.use(
-    helmet.contentSecurityPolicy({
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: [
-                "'self'",
-                (req, res) => `'nonce-${res.locals.nonce}'`,
-                "https://cdn.jsdelivr.net",
-                "https://cdnjs.cloudflare.com"
-            ],
-            styleSrc: [
-                "'self'",
-                "'unsafe-inline'", // Needed for Bootstrap or inline styles
-                "https://fonts.googleapis.com",
-                "https://cdn.jsdelivr.net",
-                "https://cdnjs.cloudflare.com"
-            ],
-            styleSrcElem: [
-                "'self'",
-                "https://fonts.googleapis.com",
-                "https://cdn.jsdelivr.net",
-                "https://cdnjs.cloudflare.com"
-            ],
-            fontSrc: [
-                "'self'",
-                "https://fonts.gstatic.com",
-                "https://cdnjs.cloudflare.com"
-            ],
-            imgSrc: [
-                "'self'",
-                "data:",
-                "https://cdn.jsdelivr.net",
-                "https://res.cloudinary.com",
-                "https://via.placeholder.com"
-            ],
-            connectSrc: ["'self'"],
-            objectSrc: ["'none'"],
-            frameSrc: ["'none'"],
-            baseUri: ["'self'"]
-        }
-    })
-);
+app.use(helmet.contentSecurityPolicy(helmetContent));
 
 // Static Files
 app.use(express.static(path.join(__dirname, "public")));
