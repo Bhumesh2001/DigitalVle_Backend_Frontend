@@ -32,6 +32,10 @@ exports.helmetContent = {
             "https://res.cloudinary.com",
             "https://via.placeholder.com"
         ],
+        mediaSrc: [
+            "'self'",
+            "https://res.cloudinary.com"
+        ],
         connectSrc: ["'self'"],
         objectSrc: ["'none'"],
         frameSrc: ["'none'"],
