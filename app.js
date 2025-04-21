@@ -36,7 +36,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // View Engine
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views")); // ✅ Fix for EJS template path
+app.set("views", path.join(__dirname, "views"));
 
 // Default Route
 app.get('/', (req, res) => res.send('🎉 Welcome to the Independent Digital Vle!'));
