@@ -35,7 +35,15 @@ exports.createOrder = async (req, res, next) => {
 // ✅ Subscribe to a Plan
 exports.subscribe = async (req, res, next) => {
     try {
-        const { userId, planId, razorpayPaymentId, razorpayOrderId } = req.body;
+        const {
+            userId,
+            planId,
+            razorpayPaymentId,
+            razorpayOrderId,
+            category,
+            isAllCategories,
+            paymentId,
+        } = req.body;
 
         const plan = await SubscriptionPlan.findById(planId);
         if (!plan) return errorResponse(res, new Error("Plan not found!"), 404);
@@ -45,10 +53,13 @@ exports.subscribe = async (req, res, next) => {
         const newSubscription = new Subscription({
             userId,
             planId,
+            category,
+            isAllCategories,
             startDate: new Date(),
             endDate: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000),
             razorpayPaymentId,
             razorpayOrderId,
+            paymentId,
             status: "active",
         });
         await newSubscription.save();
@@ -64,7 +75,9 @@ exports.getSubscriptions = async (req, res, next) => {
     try {
         const subscriptions = await Subscription.find({ userId: req.params.userId })
             .populate('userId', 'name email')
-            .populate("planId", 'name price duration features');
+            .populate("planId", 'name price duration features')
+            .populate('category', 'name status imageUrl')
+            .populate('paymentId', 'userId categoryId imageUrl');
         return successResponse(res, "Subscriptions fetched successfully!", subscriptions);
     } catch (error) {
         next(error);

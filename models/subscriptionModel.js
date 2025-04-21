@@ -30,6 +30,12 @@ const subscriptionSchema = new mongoose.Schema(
         },
         razorpayPaymentId: { type: String },  // Payment reference
         razorpayOrderId: { type: String },     // Payment order reference
+        paymentId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Payment",
+            default: null,
+            index: true,
+        },
         category: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Category",

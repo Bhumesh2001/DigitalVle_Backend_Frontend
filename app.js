@@ -60,6 +60,7 @@ app.use("/api/settings", require("./routes/settingRoutes"));
 app.use('/api/admin-articles', require('./routes/adminArticleRoutes'));
 app.use('/api/admin-stories', require('./routes/adminStoryRoutes'));
 app.use("/api/admin-users", require("./routes/adminUserRoutes"));
+app.use('/api/payments', require('./routes/paymentRoutes'));
 
 // 404 Not Found Handler
 app.use((req, res, next) => res.render("404"));
