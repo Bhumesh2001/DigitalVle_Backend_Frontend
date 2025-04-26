@@ -26,11 +26,11 @@ const getOtpEmailTemplate = (otp) => {
 };
 
 const subscriptionReminderTemplate = (sub) => {
-    return`Your subscription is expiring on ${sub.endDate.toDateString()}.Renew now to continue access!`
+    return `Your subscription is expiring on ${sub.endDate.toDateString()}.Renew now to continue access!`
 };
 
 const expiryReminderTemplate = (user, subscription) => {
-    return`
+    return `
         <h3>Hello ${user.name},</h3>
         <p>Your subscription has expired on <strong>${subscription.endDate.toDateString()}</strong>.</p>
         <p>Please renew your subscription to continue enjoying our services.</p>
@@ -42,9 +42,57 @@ const expiryReminderTemplate = (user, subscription) => {
     `
 };
 
-module.exports = { 
-    registrationEmailTemplate, 
+const sendEmailOtp = (name, otp) => {
+    return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Verify Your Email - Independent Digital VLE</title>
+        <style>
+            body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f7; margin: 0; padding: 0; }
+            .email-container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+            .email-header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
+            .email-header h1 { margin: 0; font-size: 24px; }
+            .email-body { padding: 30px; color: #333; }
+            .email-body h2 { margin-top: 0; color: #111827; }
+            .otp-box { margin: 20px 0; background-color: #f9fafb; padding: 15px; text-align: center; font-size: 28px; letter-spacing: 4px; font-weight: bold; border-radius: 6px; color: #4f46e5; border: 1px dashed #c7d2fe; }
+            .email-footer { margin-top: 30px; font-size: 12px; text-align: center; color: #6b7280; padding: 20px; border-top: 1px solid #e5e7eb; }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <div class="email-header">
+                <h1>Independent Digital VLE</h1>
+            </div>
+            <div class="email-body">
+                <h2>Verify Your Email Address</h2>
+                <p>Hello, ${name}</p>
+                <p>Thank you for registering with <strong>Independent Digital VLE</strong>!</p>
+                <p>Please use the following One-Time Password (OTP) to verify your email address:</p>
+
+                <div class="otp-box">
+                    ${otp}
+                </div>
+
+                <p>This OTP is valid for the next <strong>5 minutes</strong>.</p>
+                <p>If you did not request this, you can safely ignore this email.</p>
+
+                <p>Best Regards,<br>Independent Digital VLE Team</p>
+            </div>
+            <div class="email-footer">
+                &copy; 2025 Independent Digital VLE. All rights reserved.
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+};
+
+module.exports = {
+    registrationEmailTemplate,
     getOtpEmailTemplate,
-    subscriptionReminderTemplate, 
+    subscriptionReminderTemplate,
     expiryReminderTemplate,
+    sendEmailOtp,
 };

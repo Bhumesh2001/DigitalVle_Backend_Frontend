@@ -8,6 +8,10 @@ router.post("/register", userController.registerUser);
 router.post("/login", userController.loginUser);
 router.post("/logout", authenticate('user'), userController.logoutUser);
 
+// Verify Email Routes
+router.post("/resend-email-otp", userController.resendEmailOtp);
+router.post("/verify-email-otp", userController.verifyEmailOtp);
+
 // Google OAuth Routes
 router.get("/google", userController.redirectToGoogleProfile);
 router.get("/google/callback", userController.getGoogleProfile);

@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema(
         resetOtp: { type: String, select: false },
         otpExpires: { type: Date, select: false },
         otpVerified: { type: Boolean, default: false, select: false },
+        emailVerified: {
+            type: Boolean,
+            default: false,
+        },
         status: {
             type: String,
             enum: ["active", "inactive"],

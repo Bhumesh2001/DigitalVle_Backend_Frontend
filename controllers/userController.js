@@ -4,7 +4,11 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 const setTokenCookie = require("../utils/setTokenCookie");
 const sendEmail = require("../services/emailService");
-const { registrationEmailTemplate, getOtpEmailTemplate } = require("../utils/emailTemplates");
+const {
+    registrationEmailTemplate,
+    getOtpEmailTemplate,
+    sendEmailOtp
+} = require("../utils/emailTemplates");
 const { successResponse, errorResponse } = require("../utils/responseHandler");
 const { uploadImageOnCloudinary, deleteImageFromCloudinary } = require('../utils/cloudinaryUtils');
 
@@ -14,26 +18,163 @@ const client = new OAuth2Client(
     process.env.CALLBACK_URL
 );
 
-// Register User
+// Temporary storage for unverified users
+const unverifiedUsers = new Map();
+
+// Register User (without saving to DB until OTP verification)
 exports.registerUser = async (req, res, next) => {
     try {
         const { name, email, password, mobileNumber } = req.body;
 
-        // Check if user exists
-        const userExists = await User.findOne({ email });
-        if (userExists) return errorResponse(res, 400, "Email already exists");
+        // Check if user exists in DB or temporary storage
+        const userExists = await User.findOne({ email }) || unverifiedUsers.get(email);
+        if (userExists) {
+            return errorResponse(res, 400, "Email already exists or pending verification");
+        }
 
-        const newUser = new User({ name, email, password, mobileNumber });
-        await newUser.save();
+        // Generate OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
 
-        // Send Registration Email
-        await sendEmail(email, "Welcome to Our Platform!", registrationEmailTemplate(name));
+        // Store user data temporarily
+        const tempUser = {
+            name,
+            email,
+            password,
+            mobileNumber,
+            otp,
+            otpExpiry,
+            attempts: 0,
+            createdAt: Date.now()
+        };
 
-        successResponse(res, "User registered successfully", { userId: newUser._id });
+        unverifiedUsers.set(email, tempUser);
+
+        // Send OTP Email
+        await sendEmail(email, "Verify Your Email", sendEmailOtp(name, otp));
+
+        return successResponse(res, "OTP sent to your email for verification", { email });
     } catch (error) {
         next(error);
     }
 };
+
+// Resend Email OTP
+exports.resendEmailOtp = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return errorResponse(res, 400, "Email is required.");
+        }
+
+        const tempUser = unverifiedUsers.get(email);
+        const dbUser = await User.findOne({ email });
+
+        if (dbUser) {
+            return errorResponse(res, 400, "Email already registered.");
+        }
+
+        if (!tempUser) {
+            return errorResponse(res, 404, "No pending registration found for this email.");
+        }
+
+        // Prevent OTP flooding
+        if (tempUser.attempts >= 3) {
+            unverifiedUsers.delete(email);
+            return errorResponse(res, 429, "Too many attempts. Please register again.");
+        }
+
+        // Generate new OTP
+        const newOtp = Math.floor(100000 + Math.random() * 900000).toString();;
+        const newOtpExpiry = Date.now() + 5 * 60 * 1000;
+
+        // Update temp user
+        tempUser.otp = newOtp;
+        tempUser.otpExpiry = newOtpExpiry;
+        tempUser.attempts += 1;
+        unverifiedUsers.set(email, tempUser);
+
+        // Send new OTP
+        await sendEmail(email, "New OTP for Verification", sendEmailOtp(tempUser.name, newOtp));
+
+        return successResponse(res, "New OTP sent successfully", { email });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Verify Email OTP
+exports.verifyEmailOtp = async (req, res, next) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) {
+            return errorResponse(res, 400, "Email and OTP are required.");
+        }
+
+        const tempUser = unverifiedUsers.get(email);
+        if (!tempUser) {
+            return errorResponse(res, 404, "No pending registration found or OTP expired.");
+        }
+
+        // Check OTP expiry
+        if (tempUser.otpExpiry < Date.now()) {
+            unverifiedUsers.delete(email);
+            return errorResponse(res, 400, "OTP has expired. Please register again.");
+        }
+
+        // Verify OTP
+        if (tempUser.otp !== otp.toString()) {
+            tempUser.attempts += 1;
+
+            // Remove after too many attempts
+            if (tempUser.attempts >= 3) {
+                unverifiedUsers.delete(email);
+                return errorResponse(res, 400, "Too many failed attempts. Please register again.");
+            }
+
+            unverifiedUsers.set(email, tempUser);
+            return errorResponse(res, 400, "Invalid OTP.");
+        }
+
+        // OTP verified - create actual user
+        const { name, password, mobileNumber } = tempUser;
+        const newUser = new User({
+            name,
+            email,
+            password,
+            mobileNumber,
+            emailVerified: true
+        });
+        await newUser.save();
+
+        // Clean up
+        unverifiedUsers.delete(email);
+
+        // Send welcome email
+        await sendEmail(email, "Welcome to Our Platform!", registrationEmailTemplate(name));
+
+        return successResponse(res, "Registration successful!", {
+            userId: newUser._id,
+            emailVerified: true
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Cleanup expired temporary users (run this periodically)
+function cleanupExpiredRegistrations() {
+    const now = Date.now();
+    for (const [email, user] of unverifiedUsers.entries()) {
+        if (user.otpExpiry < now || (now - user.createdAt) > 24 * 60 * 60 * 1000) {
+            unverifiedUsers.delete(email);
+        }
+    }
+};
+
+// Run cleanup every hour
+setInterval(cleanupExpiredRegistrations, 60 * 60 * 1000);
 
 // Login user
 exports.loginUser = async (req, res, next) => {
