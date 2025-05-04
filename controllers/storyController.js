@@ -5,8 +5,8 @@ const { deleteImageFromCloudinary, uploadImageOnCloudinary } = require('../utils
 // ✅ Create a new story
 exports.createStory = async (req, res, next) => {
     try {
-        const { title, caption, expiredTime } = req.body;
-        if (!title || !expiredTime) {
+        const { title, caption } = req.body;
+        if (!title) {
             return errorResponse(res, 400, "All fields are required");
         }
 
