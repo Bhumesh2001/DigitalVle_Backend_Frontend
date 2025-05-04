@@ -18,7 +18,6 @@ exports.createStory = async (req, res, next) => {
             caption,
             imageUrl: uploadedData.url,
             publicId: uploadedData.public_id,
-            expiredTime,
             createdBy: req.user.id,
         });
 
@@ -56,7 +55,7 @@ exports.getStoryById = async (req, res, next) => {
 // ✅ Update a story
 exports.updateStory = async (req, res, next) => {
     try {
-        const { title, caption, expiredTime } = req.body;
+        const { title, caption } = req.body;
         let story = await Story.findById(req.params.id);
         if (!story) return errorResponse(res, 404, "Story not found");
 
@@ -74,7 +73,6 @@ exports.updateStory = async (req, res, next) => {
                 caption: caption || story.caption,
                 imageUrl: uploadedData.url || story.imageUrl,
                 publicId: uploadedData.public_id || story.publicId,
-                expiredTime: expiredTime || story.expiredTime
             },
             { new: true }
         );
