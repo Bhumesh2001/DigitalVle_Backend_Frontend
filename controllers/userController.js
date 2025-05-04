@@ -190,20 +190,12 @@ exports.loginUser = async (req, res, next) => {
             return errorResponse(res, 403, "You signed up with Google. Please log in using Google.");
         }
 
-        // Check if user is already logged in on another device
-        if (user.activeToken) {
-            return errorResponse(res, 403, "You are already logged in on another device.");
-        }
-
         // Verify password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return errorResponse(res, 400, "Invalid email or password");
 
         // Generate JWT token
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-        // Store token in user document
-        user.activeToken = token;
         await user.save();
 
         // ✅ Store token in cookie using the reusable function
@@ -260,12 +252,6 @@ exports.logoutUser = async (req, res, next) => {
         // Find the user
         const user = await User.findById(req.user.id);
         if (!user) return errorResponse(res, 400, "User not found");
-
-        // Check if user is already logged out
-        if (!user.activeToken) {
-            res.clearCookie("token"); // Ensure cookie is removed
-            return errorResponse(res, 401, "User already logged out!");
-        }
 
         // Clear active token on logout
         user.activeToken = null;
@@ -329,15 +315,10 @@ exports.getGoogleProfile = async (req, res, next) => {
         if (!user) {
             user = await User.create({ name, email, googleId, profilePicture });
             isNewUser = true;
-        } else if (user.activeToken) {
-            return errorResponse(res, 409, "User already logged in on another device");
         }
 
         // ✅ Generate JWT Token
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-        // ✅ Store token in user document & Save
-        user.activeToken = token;
         await user.save();
 
         // ✅ Store token in cookie securely
