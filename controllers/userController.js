@@ -215,6 +215,40 @@ exports.loginUser = async (req, res, next) => {
     }
 };
 
+// Login with Google
+exports.loginWithGoogle = async (req, res, next) => {
+    try {
+        const { googleId, email, name } = req.body;
+
+        // Check if the Google ID is provided
+        if (!googleId) {
+            return errorResponse(res, 400, "Google ID is required.");
+        }
+
+        // Find or create the user by Google ID
+        let user = await User.findOne({ googleId });
+        if (!user) {
+            user = new User({
+                googleId,
+                email,
+                name,
+            });
+            await user.save();
+            await sendEmail(email, "Welcome to Our Platform!", registrationEmailTemplate(name));
+        }
+
+        // Generate JWT token for the user
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+        // ✅ Store token in cookie using the reusable function
+        setTokenCookie(res, token, 'token');
+
+        successResponse(res, "Google login successful", { token });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // Logout user
 exports.logoutUser = async (req, res, next) => {
     try {

@@ -15,6 +15,7 @@ router.post("/verify-email-otp", userController.verifyEmailOtp);
 // Google OAuth Routes
 router.get("/google", userController.redirectToGoogleProfile);
 router.get("/google/callback", userController.getGoogleProfile);
+router.post("/login/google", userController.loginWithGoogle);
 
 // Forgot Password (Send OTP)
 router.post("/forgot-password", userController.forgotPassword);
