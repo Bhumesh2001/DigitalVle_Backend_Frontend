@@ -1,4 +1,5 @@
 const Story = require("../models/storyModel");
+const AdminStory = require('../models/adminStoryModel');
 const { successResponse, errorResponse } = require("../utils/responseHandler");
 const { deleteImageFromCloudinary, uploadImageOnCloudinary } = require('../utils/cloudinaryUtils');
 
@@ -30,11 +31,18 @@ exports.createStory = async (req, res, next) => {
 // ✅ Get all stories (only active)
 exports.getStories = async (req, res, next) => {
     try {
-        const stories = await Story.find({ expiredTime: { $gte: new Date() } })
-            .sort({ createdAt: -1 })
-            .populate('createdBy', 'name email');
+        // Fetch both stories in parallel
+        const [userStories, adminStories] = await Promise.all([
+            Story.find().sort({ createdAt: -1 }).populate("createdBy", "name email"),
+            AdminStory.find().sort({ createdAt: -1 }).populate("createdBy", "name email")
+        ]);
 
-        successResponse(res, "Stories fetched successfully", stories);
+        // Merge and sort by createdAt (latest first)
+        const combinedStories = [...userStories, ...adminStories].sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+
+        successResponse(res, "All stories fetched", combinedStories);
     } catch (error) {
         next(error);
     }
@@ -69,7 +77,7 @@ exports.updateStory = async (req, res, next) => {
         story = await Story.findByIdAndUpdate(
             req.params.id,
             {
-                title: title || story.title, 
+                title: title || story.title,
                 caption: caption || story.caption,
                 imageUrl: uploadedData.url || story.imageUrl,
                 publicId: uploadedData.public_id || story.publicId,

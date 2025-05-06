@@ -1,4 +1,5 @@
 const Article = require("../models/articleModel");
+const AdminArticle = require("../models/adminArticleModel");
 const { successResponse, errorResponse } = require("../utils/responseHandler");
 const { deleteImageFromCloudinary, uploadImageOnCloudinary } = require('../utils/cloudinaryUtils');
 
@@ -27,8 +28,12 @@ exports.createArticle = async (req, res, next) => {
 // ✅ Get All Articles
 exports.getAllArticles = async (req, res, next) => {
     try {
-        const articles = await Article.find().populate("createdBy", "name email");
-        successResponse(res, "Articles retrieved successfully", articles);
+        const adminArticles = await AdminArticle.find().sort({ createdAt: -1 }).populate("createdBy", "name email");
+        const userArticles = await Article.find().sort({ createdAt: -1 }).populate("createdBy", "name email");
+
+        const articles = [...adminArticles, ...userArticles].sort((a, b) => b.createdAt - a.createdAt);
+
+        successResponse(res, "Articles fetched", articles);
     } catch (error) {
         next(error);
     }
