@@ -174,7 +174,7 @@ function cleanupExpiredRegistrations() {
 };
 
 // Run cleanup every hour
-setInterval(cleanupExpiredRegistrations, 60 * 60 * 1000);
+setInterval(cleanupExpiredRegistrations, 1 * 60 * 1000);
 
 // Login user
 exports.loginUser = async (req, res, next) => {
