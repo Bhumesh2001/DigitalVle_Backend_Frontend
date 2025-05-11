@@ -6,6 +6,7 @@ const router = express.Router();
 
 // ✅ User Routes (Requires Authentication)
 router.get("/user/", authenticate("user"), videoController.getVideos);
+router.get("/user/search", authenticate('user'), videoController.searchVideos);
 router.get("/user/:id", authenticate("user"), videoController.getVideoById);
 
 // ✅ User Routes (Requires Authentication)

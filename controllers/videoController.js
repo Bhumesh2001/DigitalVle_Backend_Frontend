@@ -1,4 +1,5 @@
 const Video = require("../models/videoModel");
+const Category = require("../models/categoryModel");
 const { successResponse, errorResponse } = require("../utils/responseHandler");
 const { fetchVideos, attachPaidStatus } = require('../utils/subscriptionUtils');
 const {
@@ -163,6 +164,49 @@ exports.getAdminVideoById = async (req, res, next) => {
         const video = await Video.findById(req.params.id).populate("category", "name imageUrl status");
         if (!video) return errorResponse(res, 404, "Video not found!");
         successResponse(res, "Video fetched successfully!", video);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ✅ Search video by category name or video name
+exports.searchVideos = async (req, res, next) => {
+    try {
+        const { search } = req.query;
+
+        // If no search term is provided, return all videos
+        if (!search) {
+            const allVideos = await Video.find()
+                .populate("category", "name")
+                .sort({ createdAt: -1 });
+
+            return successResponse(res, "All videos fetched", {
+                results: allVideos.length,
+                videos: allVideos,
+            });
+        }
+
+        // Find matching category IDs using category name
+        const categoryIds = await Category.find({
+            name: { $regex: search, $options: "i" }
+        }).distinct("_id");
+
+        // Build combined query: title OR category name match
+        const query = {
+            $or: [
+                { title: { $regex: search, $options: "i" } },
+                { category: { $in: categoryIds } }
+            ]
+        };
+
+        const videos = await Video.find(query)
+            .populate("category", "name")
+            .sort({ createdAt: -1 });
+
+        return successResponse(res, "Videos fetched successfully", {
+            results: videos.length,
+            videos,
+        });
     } catch (error) {
         next(error);
     }
