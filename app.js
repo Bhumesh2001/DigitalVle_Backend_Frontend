@@ -7,6 +7,9 @@ const fileUpload = require("express-fileupload");
 const helmet = require("helmet");
 const morgan = require("morgan");
 
+require('./utils/subscriptionUtils');
+require('./utils/couponUtils');
+require('./utils/storyUtils');
 const connectDB = require("./config/db");
 const errorHandler = require("./middlewares/errorMiddleware");
 const { helmetContent } = require('./utils/helmetUtils');

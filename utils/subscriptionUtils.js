@@ -54,18 +54,12 @@ cron.schedule("0 * * * *", async () => { // Runs every hour
             }
         };
 
-        console.log("✅ Subscription Expiry Cron Job Completed!");
+        // console.log("✅ Subscription Expiry Cron Job Completed!");
     } catch (error) {
         console.error("❌ Error in Subscription Expiry Cron Job:", error.message);
     }
 });
 
-/**
- * Check if a user has an active subscription.
- * @param {ObjectId} userId - The user's ID.
- * @returns {Promise<Boolean | String>} - True if subscribed to all categories, or 
- * category name if subscribed to one category.
- */
 const hasSubscription = async (userId) => {
     try {
         const subscription = await Subscription.findOne({
