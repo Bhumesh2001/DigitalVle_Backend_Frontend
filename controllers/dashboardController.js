@@ -88,3 +88,16 @@ exports.getUserAnalytics = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.getLatestUsers = async (req, res, next) => {
+    try {
+        const users = await User.find({})
+            .sort({ createdAt: -1 })  // Sort by latest
+            .limit(5)
+            .select("name email");
+
+        return successResponse(res, "Latest 5 users fetched successfully", users);
+    } catch (error) {
+        next(error);
+    }
+};

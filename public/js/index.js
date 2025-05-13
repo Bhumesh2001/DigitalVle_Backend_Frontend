@@ -970,6 +970,12 @@ async function laodAdminProfileData() {
     document.getElementById('profileImage').src = data.data.profileUrl;
     document.getElementById('admin-profile-icon').src = data.data.profileUrl;
 };
+// function to load the terms and condition data
+async function loadTermsData() {
+    const data = await fetchData(`/api/terms`);
+    if (!data) return;
+    document.getElementById('termsText').value = data.data.content;
+};
 
 // **** API calling ****
 
@@ -1039,7 +1045,7 @@ async function handleFormSubmission(
         }
     } catch (error) {
         console.error("Error:", error);
-        showModalWithMessage('An unexpected error occurred.');
+        showModalWithMessage(error.message || 'An unexpected error occurred.');
     } finally {
         toggleProcessBtn(submitBtnId, processBtnId, false);
     };
@@ -1121,15 +1127,12 @@ async function apiCall({ url, method = "GET", data = null, headers = {} }) {
 // 📌 Function to Handle API Errors
 function handleApiError(data) {
     console.error("Error:", data); // Log full error details
-
     let errorMessage = "Something went wrong!";
-
     if (data.errors && data.errors.length > 0) {
         errorMessage = `⚠️ ${data.errors[0].msg}`; // Show only first error message
     } else if (data.message) {
         errorMessage = data.message;
     }
-
     showModalWithMessage(errorMessage, "error");
 };
 
@@ -1145,7 +1148,8 @@ const functionMappings = {
     '#banners-container': laodBannerData,
     '#settings': fetchSettingData,
     '#video-form': loadCategoryOption,
-    '#admin_profile': laodAdminProfileData
+    '#admin_profile': laodAdminProfileData,
+    '#termsText': loadTermsData,
 };
 // Function to execute only for existing elements
 const executeIfElementExists = () => {
@@ -1283,7 +1287,6 @@ function toggleProcessBtn(submitBtnId, processBtnId, isLoading) {
 };
 
 // Event listeners for form submissions
-
 if (doesElementExist('#video-form')) {
     document.querySelector("#video-form").addEventListener("submit", function (e) {
         e.preventDefault();
@@ -1400,7 +1403,7 @@ if (doesElementExist('#admin_profile_form')) {
     });
 };
 
-// banner priview
+// banner priview and  generate coupon
 if (doesElementExist('#bannerLink')) {
     document.getElementById('bannerLink').addEventListener('change', function () {
         const file = this.files[0];
@@ -1421,7 +1424,6 @@ if (doesElementExist('#bannerLink')) {
         };
     });
 };
-// generate coupon
 if (doesElementExist('#generateCouponBtn')) {
     document.getElementById('generateCouponBtn').addEventListener('click', function () {
         const randomCouponCode = Math.random().toString(36).substr(2, 8).toUpperCase();
@@ -1478,7 +1480,6 @@ if (doesElementExist('#logout-btn')) {
 };
 
 // event listener for setting form submission
-
 if (doesElementExist('#razorpayForm')) {
     document.getElementById('razorpayForm').addEventListener('submit', (e) => {
         e.preventDefault();
@@ -1519,9 +1520,31 @@ if (doesElementExist('#cloudinaryForm')) {
         );
     });
 };
+if (doesElementExist('#submitTerms')) {
+    document.getElementById('submitTerms').addEventListener('click', async () => {
+        const termsText = document.getElementById('termsText').value;
+        try {
+            const response = await fetch('/api/terms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: termsText }),
+            });
+            const result = await response.json();
+
+            if (response.ok) {
+                showModalWithMessage(result.message);
+            } else {
+                handleApiError(result.data);
+            }
+        } catch (err) {
+            showModalWithMessage(err.message || 'Api Error');
+        }
+    });
+};
 
 // event listener for update form submission
-
 if (doesElementExist('#video-form_')) {
     document.querySelector("#video-form_").addEventListener("submit", function (e) {
         e.preventDefault();
@@ -1747,38 +1770,32 @@ if (doesElementExist('#toggle-pass')) {
     });
 };
 
-// ✅ Sample Data (You can fetch this from API)
-const latestUsers = [
-    { name: "Bhumesh Kewat", email: "bhumesh@example.com" },
-    { name: "Ravi Sharma", email: "ravi@example.com" },
-    { name: "Sneha Patel", email: "sneha@example.com" },
-    { name: "Aman Verma", email: "aman@example.com" },
-    { name: "Priya Desai", email: "priya@example.com" },
-];
-
-document.addEventListener("DOMContentLoaded", () => {
-    const latestUsers = [
-        { name: "Bhumesh Kewat", email: "bhumesh@example.com" },
-        { name: "Ravi Sharma", email: "ravi@example.com" },
-        { name: "Sneha Patel", email: "sneha@example.com" },
-        { name: "Aman Verma", email: "aman@example.com" },
-        { name: "Priya Desai", email: "priya@example.com" },
-    ];
-
+// Load and display the latest users
+document.addEventListener("DOMContentLoaded", async () => {
     const listEl = document.getElementById("latestUsers");
-    if (listEl) {
-        latestUsers.forEach((user, index) => {
-            const item = document.createElement("li");
-            item.className =
-                "list-group-item bg-dark text-white d-flex justify-content-between align-items-center";
-            item.innerHTML = `
-                <div>
-                    <strong>${user.name}</strong><br />
-                    <small>${user.email}</small>
-                </div>
-                <span class="badge bg-primary rounded-pill">#${index + 1}</span>
-            `;
-            listEl.appendChild(item);
-        });
+    if (!listEl) return;
+
+    const result = await fetchData('/api/dashboard/latest');
+
+    if (!result.success || !Array.isArray(result.data) || result.data.length === 0) {
+        listEl.innerHTML = `
+            <li class="list-group-item bg-dark text-white text-center">
+                No users found.
+            </li>`;
+        return;
     }
+
+    result.data.forEach((user, index) => {
+        const item = document.createElement("li");
+        item.className =
+            "list-group-item bg-dark text-white d-flex justify-content-between align-items-center";
+        item.innerHTML = `
+            <div>
+                <strong>${user.name}</strong><br />
+                <small>${user.email}</small>
+            </div>
+            <span class="badge bg-primary rounded-pill">#${index + 1}</span>
+        `;
+        listEl.appendChild(item);
+    });
 });

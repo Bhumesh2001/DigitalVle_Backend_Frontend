@@ -5,5 +5,6 @@ const authenticate = require('../middlewares/authMiddleware');
 
 router.get('/summary', authenticate('admin'), dashboardController.getDashboardSummary);
 router.get('/user-analytics', authenticate('admin'), dashboardController.getUserAnalytics);
+router.get("/latest", authenticate('admin'), dashboardController.getLatestUsers);
 
 module.exports = router;
