@@ -25,8 +25,8 @@ exports.createPayment = async (req, res, next) => {
 exports.getAllPayments = async (req, res, next) => {
     try {
         const payments = await Payment.find()
-        .populate('userId', 'name email mobileNumber status')
-        .populate('categoryId', 'name imageUrl status');
+            .populate('userId', 'name email mobileNumber status')
+            .populate('categoryId', 'name imageUrl status');
         return successResponse(res, 'Payments fetched successfully', payments);
     } catch (error) {
         next(error);
@@ -38,7 +38,7 @@ exports.getPaymentsByUser = async (req, res, next) => {
         const payments = await Payment.find({ userId: req.user.id })
             .populate('categoryId', 'name imageUrl status')
             .populate('userId', 'name email mobileNumber status');
-            
+
         if (!payments.length) {
             return errorResponse(res, 'No payments found for this user', 404);
         }
