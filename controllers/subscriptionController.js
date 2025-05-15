@@ -50,10 +50,9 @@ exports.subscribe = async (req, res, next) => {
 
         const durationDays = plan.duration === "monthly" ? 30 : plan.duration === "quarterly" ? 90 : 365;
 
-        const newSubscription = new Subscription({
+        const subscriptionData = {
             userId,
             planId,
-            category,
             isAllCategories,
             startDate: new Date(),
             endDate: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000),
@@ -61,7 +60,17 @@ exports.subscribe = async (req, res, next) => {
             razorpayOrderId,
             paymentId,
             status: "active",
-        });
+        };
+
+        // 🛡️ Only add category if it's valid and not all categories
+        if (!isAllCategories) {
+            if (!category || !mongoose.Types.ObjectId.isValid(category)) {
+                return errorResponse(res, new Error("Invalid category ID"), 400);
+            }
+            subscriptionData.category = category;
+        }
+
+        const newSubscription = new Subscription(subscriptionData);
         await newSubscription.save();
 
         return successResponse(res, "Subscription activated successfully!", newSubscription);
