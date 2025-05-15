@@ -45,11 +45,25 @@ exports.subscribe = async (req, res, next) => {
             paymentId,
         } = req.body;
 
+        // ✅ Check if user already has an active subscription
+        const existingSubscription = await Subscription.findOne({
+            userId,
+            status: "active",
+        });
+
+        if (existingSubscription) {
+            return errorResponse(res, 400, "User already has an active subscription.");
+        }
+
+        // ✅ Check if plan exists
         const plan = await SubscriptionPlan.findById(planId);
-        if (!plan) return errorResponse(res, new Error("Plan not found!"), 404);
+        if (!plan) return errorResponse(res, 404, "Plan not found!");
 
-        const durationDays = plan.duration === "monthly" ? 30 : plan.duration === "quarterly" ? 90 : 365;
+        const durationDays =
+            plan.duration === "monthly" ? 30 :
+                plan.duration === "quarterly" ? 90 : 365;
 
+        // ✅ Prepare subscription data
         const subscriptionData = {
             userId,
             planId,
@@ -62,14 +76,15 @@ exports.subscribe = async (req, res, next) => {
             status: "active",
         };
 
-        // 🛡️ Only add category if it's valid and not all categories
+        // ✅ If not all categories, validate category
         if (!isAllCategories) {
             if (!category || !mongoose.Types.ObjectId.isValid(category)) {
-                return errorResponse(res, new Error("Invalid category ID"), 400);
+                return errorResponse(res, 400, "Invalid category ID.");
             }
             subscriptionData.category = category;
         }
 
+        // ✅ Save subscription
         const newSubscription = new Subscription(subscriptionData);
         await newSubscription.save();
 

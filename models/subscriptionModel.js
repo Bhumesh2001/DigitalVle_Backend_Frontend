@@ -51,4 +51,9 @@ const subscriptionSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+subscriptionSchema.index(
+    { userId: 1, status: 1 },
+    { unique: true, partialFilterExpression: { status: "active" } }
+);
+
 module.exports = mongoose.model("Subscription", subscriptionSchema);
