@@ -4,7 +4,7 @@ const { uploadImageOnCloudinary } = require('../utils/cloudinaryUtils');
 
 exports.createPayment = async (req, res, next) => {
     try {
-        const { categoryId } = req.body;
+        const { categoryId = null } = req.body;
 
         if (!req.files || !req.files.imageUrl) return errorResponse(res, 400, 'No file uploaded');
         const uploadedData = await uploadImageOnCloudinary(req.files.imageUrl.tempFilePath, "VlePayments");
