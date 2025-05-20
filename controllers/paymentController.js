@@ -4,17 +4,31 @@ const { uploadImageOnCloudinary } = require('../utils/cloudinaryUtils');
 
 exports.createPayment = async (req, res, next) => {
     try {
-        const { categoryId = null } = req.body;
+        let { categoryId } = req.body;
 
-        if (!req.files || !req.files.imageUrl) return errorResponse(res, 400, 'No file uploaded');
+        // ✅ Handle empty or invalid categoryId
+        if (!categoryId || categoryId.trim() === "") {
+            categoryId = null;
+        }
+
+        // ✅ File validation
+        if (!req.files || !req.files.imageUrl) {
+            return errorResponse(res, new Error('No file uploaded'), 400);
+        }
+
         const uploadedData = await uploadImageOnCloudinary(req.files.imageUrl.tempFilePath, "VlePayments");
 
-        const payment = await Payment.create({
+        const paymentData = {
             userId: req.user.id,
-            categoryId,
             imageUrl: uploadedData.url,
-            publicId: uploadedData.public_id
-        });
+            publicId: uploadedData.public_id,
+        };
+
+        if (categoryId) {
+            paymentData.categoryId = categoryId;
+        }
+
+        const payment = await Payment.create(paymentData);
 
         return successResponse(res, 'Payment submitted successfully', payment);
     } catch (error) {
