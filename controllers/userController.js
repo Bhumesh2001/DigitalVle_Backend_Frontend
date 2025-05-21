@@ -462,7 +462,7 @@ exports.getProfile = async (req, res, next) => {
 // 🔹 Update User Profile
 exports.updateProfile = async (req, res, next) => {
     try {
-        const { name, mobileNumber } = req.body;
+        const { name, mobileNumber, dob } = req.body;
 
         const user = await User.findById(req.user.id);
         if (!user) return errorResponse(res, 404, "User not found");
@@ -470,6 +470,7 @@ exports.updateProfile = async (req, res, next) => {
         // ✅ Update only the provided fields
         if (name) user.name = name;
         if (mobileNumber) user.mobileNumber = mobileNumber;
+        if (dob) user.dob = dob;
 
         // 📸 Upload new profile picture if exists
         if (req.files && req.files.profileUrl) {
