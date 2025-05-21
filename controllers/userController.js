@@ -237,6 +237,7 @@ exports.loginWithGoogle = async (req, res, next) => {
 
         successResponse(res, "Google login successful", { token });
     } catch (error) {
+        console.log(error);
         next(error);
     }
 };
