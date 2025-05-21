@@ -212,13 +212,24 @@ exports.loginWithGoogle = async (req, res, next) => {
     try {
         const { googleId, email, name } = req.body;
 
-        // Check if the Google ID is provided
         if (!googleId) {
             return errorResponse(res, 400, "Google ID is required.");
         }
 
-        // Find or create the user by Google ID
+        // 🛑 Check if email already exists without Google ID
+        let existingUser = await User.findOne({ email });
+
+        // If user exists with email but without googleId => block Google login
+        if (existingUser && !existingUser.googleId) {
+            return errorResponse(res, 400, "Account exists with this email. Please login using email and password.");
+        }
+
+        // ✅ Now find user by googleId
         let user = await User.findOne({ googleId });
+
+        let isNewUser = false;
+
+        // If not found, create new user with Google ID
         if (!user) {
             user = new User({
                 googleId,
@@ -227,17 +238,25 @@ exports.loginWithGoogle = async (req, res, next) => {
             });
             await user.save();
             await sendEmail(email, "Welcome to Our Platform!", registrationEmailTemplate(name));
+            isNewUser = true;
         }
 
-        // Generate JWT token for the user
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        // Generate JWT token
+        const token = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
 
-        // ✅ Store token in cookie using the reusable function
+        // Set token in cookie
         setTokenCookie(res, token, 'token');
 
-        successResponse(res, "Google login successful", { token });
+        successResponse(
+            res,
+            isNewUser ? "Signup successful via Google" : "Login successful via Google",
+            { token }
+        );
     } catch (error) {
-        console.log(error);
         next(error);
     }
 };
