@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema(
             unique: true,
             sparse: true
         },
+        dob: { type: Date },
         role: { type: String, enum: ['user'], default: 'user' },
         profileUrl: { type: String },
         publicId: {
