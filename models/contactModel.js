@@ -22,7 +22,7 @@ const contactSchema = new mongoose.Schema(
             required: true,
             match: [/^\+?[\d\s\-]{10,15}$/, "Invalid phone number"],
             index: true,
-            unique: true,
+            // unique: true,
             maxlength: 15
         },
         city: {
