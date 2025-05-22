@@ -22,8 +22,6 @@ const userSchema = new mongoose.Schema({
     mobileNumber: {
         type: String,
         match: [/^\d{10}$/, "Invalid mobile number"],
-        unique: true,
-        sparse: true,
         default: null,
         index: true,
     },
