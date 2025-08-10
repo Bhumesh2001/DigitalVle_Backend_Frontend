@@ -28,8 +28,15 @@ exports.createArticle = async (req, res, next) => {
 // ✅ Get All Articles
 exports.getAllArticles = async (req, res, next) => {
     try {
-        const adminArticles = await AdminArticle.find().sort({ createdAt: -1 }).populate("createdBy", "name email");
-        const userArticles = await Article.find().sort({ createdAt: -1 }).populate("createdBy", "name email");
+        const adminArticles = await AdminArticle.find()
+            .select('title description imageUrl createdBy')
+            .sort({ createdAt: -1 })
+            .populate("createdBy", "name email");
+
+        const userArticles = await Article.find()
+            .select('title description imageUrl createdBy')
+            .sort({ createdAt: -1 })
+            .populate("createdBy", "name email");
 
         const articles = [...adminArticles, ...userArticles].sort((a, b) => b.createdAt - a.createdAt);
 
@@ -42,7 +49,10 @@ exports.getAllArticles = async (req, res, next) => {
 // ✅ Get Single Article
 exports.getArticleById = async (req, res, next) => {
     try {
-        const article = await Article.findById(req.params.id).populate("createdBy", "name email");
+        const article = await Article.findById(req.params.id)
+            .select('title description imageUrl createdBy')
+            .populate("createdBy", "name email");
+            
         if (!article) return errorResponse(res, 404, "Article not found");
 
         successResponse(res, "Article retrieved successfully", article);

@@ -29,7 +29,7 @@ exports.createCategory = async (req, res, next) => {
 // ✅ Get All Categories
 exports.getCategories = async (req, res, next) => {
     try {
-        const categories = await Category.find().sort({ createdAt: -1 });
+        const categories = await Category.find().select('name imageUrl status').sort({ createdAt: -1 });
         successResponse(res, "Categories retrieved successfully", categories);
     } catch (error) {
         next(error);

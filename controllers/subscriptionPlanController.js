@@ -22,7 +22,9 @@ exports.createSubscriptionPlan = async (req, res, next) => {
  */
 exports.getAllSubscriptionPlans = async (req, res, next) => {
     try {
-        const plans = await SubscriptionPlan.find().sort({ createdAt: -1 });
+        const plans = await SubscriptionPlan.find()
+            .select('-createdAt -updatedAt -__v')
+            .sort({ createdAt: -1 });
         successResponse(res, "Subscription plans fetched successfully!", plans);
     } catch (error) {
         next(error);

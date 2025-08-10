@@ -26,7 +26,7 @@ exports.createBanner = async (req, res, next) => {
 // ✅ Get All Banners
 exports.getAllBanners = async (req, res, next) => {
     try {
-        const banners = await Banner.find();
+        const banners = await Banner.find().select('imageUrl status');
         successResponse(res, "Banners fetched successfully", banners);
     } catch (error) {
         next(error);

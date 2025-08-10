@@ -1,4 +1,5 @@
 const Razorpay = require("razorpay");
+const mongoose = require('mongoose');
 const Subscription = require("../models/subscriptionModel");
 const SubscriptionPlan = require("../models/subscriptionPlanModel");
 const { successResponse, errorResponse } = require("../utils/responseHandler");
@@ -98,9 +99,10 @@ exports.subscribe = async (req, res, next) => {
 exports.getSubscriptions = async (req, res, next) => {
     try {
         const subscriptions = await Subscription.find({ userId: req.params.userId })
+            .select('-createdAt -updatedAt -__v')
             .populate('userId', 'name email')
             .populate("planId", 'name price duration features')
-            .populate('category', 'name status imageUrl')
+            .populate('category', 'name imageUrl')
             .populate('paymentId', 'userId categoryId imageUrl');
         return successResponse(res, "Subscriptions fetched successfully!", subscriptions);
     } catch (error) {

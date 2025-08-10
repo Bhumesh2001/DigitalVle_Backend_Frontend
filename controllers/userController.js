@@ -470,7 +470,7 @@ exports.resetPassword = async (req, res, next) => {
 exports.getProfile = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id)
-            .select("-publicId -password -otp -otpExpires -activeToken -role");
+            .select("name email mobileNumber status");
         if (!user) return errorResponse(res, 404, "User not found");
 
         successResponse(res, "Profile retrieved successfully", user);

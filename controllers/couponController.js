@@ -85,8 +85,15 @@ exports.deleteCoupon = async (req, res, next) => {
 exports.getRandomCoupon = async (req, res, next) => {
     try {
         const coupon = await Coupon.aggregate([
-            { $match: { status: "active", expiryDate: { $gte: new Date() } } }, // ✅ Filter only active, non-expired coupons
-            { $sample: { size: 1 } } // ✅ Get one random coupon
+            { $match: { status: "active", expiryDate: { $gte: new Date() } } },
+            { $sample: { size: 1 } },
+            {
+                $project: {
+                    createdAt: 0,
+                    updatedAt: 0,
+                    __v: 0
+                }
+            }
         ]);
 
         if (!coupon.length) return errorResponse(res, 404, "No active coupons found!");

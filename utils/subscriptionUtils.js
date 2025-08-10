@@ -89,7 +89,8 @@ const attachPaidStatus = async (videos, userId) => {
 const fetchVideos = async (filter, userId, res, message, next) => {
     try {
         let videos = await Video.find(filter)
-            .populate("category", "name imageUrl status")
+            .select('-createdAt -updatedAt -__v -thumbnailPublicId -videoPublicId')
+            .populate("category", "name imageUrl")
             .sort({ createdAt: -1 });
         videos = await attachPaidStatus(videos, userId);
         successResponse(res, message, videos);

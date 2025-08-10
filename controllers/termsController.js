@@ -34,7 +34,7 @@ exports.createOrUpdateTerms = async (req, res, next) => {
 // ✅ Get active Terms
 exports.getTerm = async (req, res, next) => {
     try {
-        const terms = await Terms.findOne();
+        const terms = await Terms.findOne().select('content');
         if (!terms) return errorResponse(res, 404, "No Terms & Conditions found");
 
         return successResponse(res, "Terms & Conditions fetched successfully", terms);

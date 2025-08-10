@@ -1,6 +1,18 @@
 const Like = require("../models/likeModel");
 const Comment = require("../models/commentModel");
+const User = require('../models/userModel');
+const Video = require("../models/videoModel");
+const Article = require("../models/articleModel");
+const Story = require("../models/storyModel");
 const { errorResponse, successResponse } = require("../utils/responseHandler");
+
+// Map contentType to models
+const contentModels = {
+    video: Video,
+    article: Article,
+    story: Story,
+    comment: Comment,
+};
 
 // ✅ Like a content
 exports.likeContent = async (req, res, next) => {
@@ -8,13 +20,38 @@ exports.likeContent = async (req, res, next) => {
         const { contentId, contentType } = req.body;
         const userId = req.user.id;
 
-        if (!contentId || !contentType) return errorResponse(res, 400, "Content ID and type are required");
+        if (!contentId || !contentType) {
+            return errorResponse(res, 400, "Content ID and type are required");
+        }
 
-        const existingLike = await Like.findOne({ userId, contentId });
-        if (existingLike) return errorResponse(res, 400, "Already liked!");
+        const Model = contentModels[contentType.toLowerCase()];
+        if (!Model) {
+            return errorResponse(res, 400, "Invalid content type");
+        }
 
-        await Like.create({ userId, contentId, contentType });
-        successResponse(res, "Liked successfully!");
+        const [existingLike, content, user] = await Promise.all([
+            Like.findOne({ userId, contentId }),
+            Model.findById(contentId)
+                .select('-createdAt -updatedAt -__v -publicId -thumbnailPublicId -videoPublicId'),
+            User.findById(userId).select("name email"),
+        ]);
+
+        if (existingLike) {
+            return errorResponse(res, 400, "Already liked!");
+        }
+
+        if (!content) {
+            return errorResponse(res, 404, "Content not found");
+        }
+
+        const like = await Like.create({ userId, contentId, contentType });
+
+        return successResponse(res, "Liked successfully!", {
+            likeId: like._id,
+            likedBy: user,
+            contentType,
+            content,
+        });
     } catch (error) {
         next(error);
     }
@@ -23,15 +60,35 @@ exports.likeContent = async (req, res, next) => {
 // ✅ Unlike a content
 exports.unlikeContent = async (req, res, next) => {
     try {
-        const { contentId } = req.body;
+        const { contentId, contentType } = req.body;
         const userId = req.user.id;
 
-        if (!contentId) return errorResponse(res, 400, "Content ID is required");
+        if (!contentId || !contentType) {
+            return errorResponse(res, 400, "Content ID and type are required");
+        }
 
-        const like = await Like.findOneAndDelete({ userId, contentId });
-        if (!like) return errorResponse(res, 404, "Like not found!");
+        const Model = contentModels[contentType.toLowerCase()];
+        if (!Model) {
+            return errorResponse(res, 400, "Invalid content type");
+        }
 
-        successResponse(res, "Unliked successfully!");
+        const like = await Like.findOneAndDelete({ userId, contentId, contentType });
+        if (!like) {
+            return errorResponse(res, 404, "Like not found or already unliked");
+        }
+
+        const [content, user] = await Promise.all([
+            Model.findById(contentId)
+                .select("-createdAt -updatedAt -__v -publicId -thumbnailPublicId -videoPublicId"),
+            User.findById(userId).select("name email")
+        ]);
+
+        return successResponse(res, "Unliked successfully!", {
+            contentId,
+            contentType,
+            user,
+            content
+        });
     } catch (error) {
         next(error);
     }
@@ -43,10 +100,51 @@ exports.addComment = async (req, res, next) => {
         const { contentId, contentType, text, parentId } = req.body;
         const userId = req.user.id;
 
-        if (!contentId || !contentType || !text) return errorResponse(res, 400, "Content ID, type, and text are required");
+        // 🔍 Validate required fields
+        if (!contentId || !contentType || !text) {
+            return errorResponse(res, 400, "Content ID, type, and text are required");
+        }
 
-        const comment = await Comment.create({ userId, contentId, contentType, text, parentId });
-        successResponse(res, "Comment added successfully!", comment);
+        // 📦 Resolve the model based on content type
+        const Model = contentModels[contentType.toLowerCase()];
+        if (!Model) {
+            return errorResponse(res, 400, "Invalid content type");
+        }
+
+        // 📝 Create the comment
+        const comment = await Comment.create({
+            userId,
+            contentId,
+            contentType,
+            text,
+            parentId: parentId || null
+        });
+
+        // 🚀 Parallel data fetch: user and content info
+        const [user, content] = await Promise.all([
+            User.findById(userId).select("name email"),
+            Model.findById(contentId)
+                .select("-createdAt -updatedAt -__v -publicId -thumbnailPublicId -videoPublicId")
+        ]);
+
+        // ✅ Respond with full comment details
+        return successResponse(res, "Comment added successfully!", {
+            commentId: comment._id,
+            text: comment.text,
+            parentId: comment.parentId,
+            user: {
+                _id: user?._id,
+                name: user?.name,
+                email: user?.email
+            },
+            content: {
+                _id: contentId,
+                type: contentType,
+                title: content?.title || null,
+                description: content?.description || null
+            },
+            createdAt: comment.createdAt
+        });
     } catch (error) {
         next(error);
     }
@@ -80,7 +178,7 @@ exports.getComments = async (req, res, next) => {
         const { contentId } = req.params;
         if (!contentId) return errorResponse(res, 400, "Content ID is required");
 
-        const comments = await Comment.find({ contentId, parentId: null })
+        const comments = await Comment.find({ contentId, parentId: null }).select('-__v')
             .populate({ path: "userId", select: "name" })
             .populate({ path: "parentId", select: "text userId" });
 

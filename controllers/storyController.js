@@ -33,8 +33,12 @@ exports.getStories = async (req, res, next) => {
     try {
         // Fetch both stories in parallel
         const [userStories, adminStories] = await Promise.all([
-            Story.find().sort({ createdAt: -1 }).populate("createdBy", "name email"),
-            AdminStory.find().sort({ createdAt: -1 }).populate("createdBy", "name email")
+            Story.find()
+                .select('title caption imageUrl createdBy isExpired expiredTime')
+                .sort({ createdAt: -1 }).populate("createdBy", "name email"),
+            AdminStory.find()
+                .select('title caption imageUrl createdBy isExpired expiredTime')
+                .sort({ createdAt: -1 }).populate("createdBy", "name email")
         ]);
 
         // Merge and sort by createdAt (latest first)
@@ -51,7 +55,10 @@ exports.getStories = async (req, res, next) => {
 // ✅ Get a single story by ID
 exports.getStoryById = async (req, res, next) => {
     try {
-        const story = await Story.findById(req.params.id);
+        const story = await Story.findById(req.params.id)
+            .select('title caption imageUrl createdBy isExpired expiredTime')
+            .populate('createdBy', 'name email');
+
         if (!story) return errorResponse(res, 404, "Story not found");
 
         successResponse(res, "Story fetched successfully", story);

@@ -173,35 +173,31 @@ exports.getAdminVideoById = async (req, res, next) => {
 exports.searchVideos = async (req, res, next) => {
     try {
         const { search } = req.query;
+        const userId = req.user?.id; // Optional chaining in case of unauthenticated user
 
-        // If no search term is provided, return all videos
-        if (!search) {
-            const allVideos = await Video.find()
-                .populate("category", "name")
-                .sort({ createdAt: -1 });
+        let filter = {};
 
-            return successResponse(res, "All videos fetched", {
-                results: allVideos.length,
-                videos: allVideos,
-            });
+        if (search) {
+            // Find category IDs based on search text
+            const categoryIds = await Category.find({
+                name: { $regex: search, $options: "i" }
+            }).distinct("_id");
+
+            filter = {
+                $or: [
+                    { title: { $regex: search, $options: "i" } },
+                    { category: { $in: categoryIds } }
+                ]
+            };
         }
 
-        // Find matching category IDs using category name
-        const categoryIds = await Category.find({
-            name: { $regex: search, $options: "i" }
-        }).distinct("_id");
-
-        // Build combined query: title OR category name match
-        const query = {
-            $or: [
-                { title: { $regex: search, $options: "i" } },
-                { category: { $in: categoryIds } }
-            ]
-        };
-
-        const videos = await Video.find(query)
-            .populate("category", "name")
+        let videos = await Video.find(filter)
+            .select('-createdAt -updatedAt -__v -thumbnailPublicId -videoPublicId')
+            .populate("category", "name imageUrl")
             .sort({ createdAt: -1 });
+
+        // Add paid field to each video
+        videos = await attachPaidStatus(videos, userId);
 
         return successResponse(res, "Videos fetched successfully", {
             results: videos.length,
