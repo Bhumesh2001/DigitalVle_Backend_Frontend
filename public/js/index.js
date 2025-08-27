@@ -9,84 +9,104 @@ const thumbnailPreview = document.getElementById("thumbnailPreview");
 const videoFileInput = document.getElementById("video_");
 const videoUrlInput = document.getElementById("video-url_");
 
-// Sample data for the chart
-const labels = [
-    "User123",
-    "User456",
-    "User789",
-    "User101",
-    "User202",
-    "User303",
-];
-const data = {
-    labels: labels,
-    datasets: [
-        {
-            label: "Revenue Amount ($)",
-            data: [100, 200, 150, 250, 300, 180],
-            backgroundColor: "#3f37c9",
-            borderColor: "#6162dc", // Darker blue
-            borderWidth: 1,
-        },
-        {
-            label: "Projected Revenue ($)",
-            data: [120, 180, 220, 300, 250, 320],
-            backgroundColor: "#e9c46a",
-            borderColor: "#e9c46a",
-            borderWidth: 1,
-        },
-        {
-            label: "Potential Revenue ($)",
-            data: [150, 250, 300, 400, 350, 420],
-            backgroundColor: "#db3545",
-            borderColor: "#db3545",
-            borderWidth: 1,
-        },
-    ],
+// ✅ Fetch analytics data dynamically
+async function fetchAnalytics() {
+    try {
+        // const res = await fetch("/api/users/analytics");
+        const result = await fetchData('/api/users/analytics');
+
+        // Backend returns: [{ month: 1, count: 10 }, { month: 2, count: 20 }, ...]
+        if (!result || !Array.isArray(result)) return [];
+
+        return result;
+    } catch (err) {
+        console.error("Error fetching analytics:", err);
+        return [];
+    }
 };
-const config = {
-    type: "bar",
-    data: data,
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            y: {
-                beginAtZero: true,
-                grid: {
-                    color: "rgba(255, 255, 255, 0.1)",
+// ✅ Render chart
+async function renderRevenueChart() {
+    const analyticsData = await fetchAnalytics();
+
+    // Convert months to labels
+    const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+
+    const labels = analyticsData.map(item => monthNames[item.month - 1]);
+    const actualRevenue = analyticsData.map(item => item.count); // real count
+    const projectedRevenue = analyticsData.map(item => Math.round(item.count * 1.2)); // example projection
+    const potentialRevenue = analyticsData.map(item => Math.round(item.count * 1.5)); // example potential
+
+    const data = {
+        labels: labels,
+        datasets: [
+            {
+                label: "Revenue Amount ($)",
+                data: actualRevenue,
+                backgroundColor: "#3f37c9",
+                borderColor: "#6162dc",
+                borderWidth: 1,
+            },
+            {
+                label: "Projected Revenue ($)",
+                data: projectedRevenue,
+                backgroundColor: "#e9c46a",
+                borderColor: "#e9c46a",
+                borderWidth: 1,
+            },
+            {
+                label: "Potential Revenue ($)",
+                data: potentialRevenue,
+                backgroundColor: "#db3545",
+                borderColor: "#db3545",
+                borderWidth: 1,
+            },
+        ],
+    };
+
+    const config = {
+        type: "bar",
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: "rgba(255, 255, 255, 0.1)" },
+                    title: {
+                        display: true,
+                        text: "Revenue ($)",
+                        color: "#ffffff",
+                    },
                 },
-                title: {
-                    display: true,
-                    text: "Revenue ($)",
-                    color: "#ffffff",
+                x: {
+                    grid: { color: "rgba(255, 255, 255, 0.1)" },
+                    title: {
+                        display: true,
+                        text: "Months",
+                        color: "#ffffff",
+                    },
                 },
             },
-            x: {
-                grid: {
-                    color: "rgba(255, 255, 255, 0.1)",
-                },
-                title: {
-                    display: true,
-                    text: "Users",
-                    color: "#ffffff",
+            plugins: {
+                legend: {
+                    labels: { color: "#ffffff" },
                 },
             },
         },
-        plugins: {
-            legend: {
-                labels: {
-                    color: "#ffffff",
-                },
-            },
-        },
-    },
+    };
+
+    // ✅ Render only if element exists
+    if (doesElementExist('#dashboard')) {
+        new Chart(document.getElementById("revenueChart"), config);
+    }
 };
 
-// Render the chart
-if (doesElementExist('#dashboard')) {
-    new Chart(document.getElementById("revenueChart"), config);
-};
+// Call the function
+renderRevenueChart();
 
 // toggle button
 document.querySelector('.toggle-btn').addEventListener('click', () => {
@@ -290,7 +310,7 @@ async function fetchAndPopulate(url, mapping) {
 };
 
 const loadEditArticleData = (articleId) =>
-    fetchAndPopulate(`/api/admin-articles/${articleId}`, {
+    fetchAndPopulate(`/api/admin-articles/${articleId}?r=admin`, {
         key: "data",
         fields: {
             "title": "title",
@@ -299,7 +319,7 @@ const loadEditArticleData = (articleId) =>
         imageField: "imageUrl"
     });
 const loadEditUserData = (userId) =>
-    fetchAndPopulate(`/api/admin-users/${userId}`, {
+    fetchAndPopulate(`/api/admin-users/${userId}?r=admin`, {
         key: "data",
         fields: {
             "name": "name",
@@ -309,7 +329,7 @@ const loadEditUserData = (userId) =>
         }
     });
 const loadEditCategoryData = (categoryId) =>
-    fetchAndPopulate(`/api/categories/${categoryId}`, {
+    fetchAndPopulate(`/api/categories/${categoryId}?r=admin`, {
         key: "data",
         fields: {
             "name_": "name",
@@ -318,7 +338,7 @@ const loadEditCategoryData = (categoryId) =>
         imageField: "imageUrl"
     });
 const loadEditSubscriptionData = (subscriptionId) =>
-    fetchAndPopulate(`/api/subscription-plans/${subscriptionId}`, {
+    fetchAndPopulate(`/api/subscription-plans/${subscriptionId}?r=admin`, {
         key: "data",
         fields: {
             "planName_": "name",
@@ -329,7 +349,7 @@ const loadEditSubscriptionData = (subscriptionId) =>
         selectField: "status"
     });
 const loadEditCouponData = (couponId) =>
-    fetchAndPopulate(`/api/coupons/${couponId}`, {
+    fetchAndPopulate(`/api/coupons/${couponId}?r=admin`, {
         key: "data",
         fields: {
             "couponCode_": "code",
@@ -339,11 +359,10 @@ const loadEditCouponData = (couponId) =>
         selectField: "status",
         selectedType: "type_",
     });
-
 // ✅ Function to Load Video Data
 const loadEditVideoData = async (videoId) => {
     try {
-        const res = await fetchData(`/api/videos/admin/${videoId}`);
+        const res = await fetchData(`/api/videos/admin/${videoId}?r=admin`);
         if (!res) return;
 
         const video = res.data;
@@ -386,7 +405,7 @@ const loadEditVideoData = async (videoId) => {
 // ✅ Function to Load Story Data
 const loadEditStoryData = async (storyId) => {
     try {
-        const res = await fetchData(`/api/admin-stories/${storyId}`);
+        const res = await fetchData(`/api/admin-stories/${storyId}?r=admin`);
         if (!res) return;
 
         const story = res.data;
@@ -410,10 +429,12 @@ const loadEditStoryData = async (storyId) => {
 // ✅ Function to Load Banner Data
 const loadEditBannerData = async (bannerId) => {
     try {
-        const res = await fetchData(`/api/banners/${bannerId}`);
+        const res = await fetchData(`/api/banners/${bannerId}?r=admin`);
         if (!res) return;
 
         const banner = res.data;
+
+        document.getElementById('name_').value = banner.name;
 
         // ✅ Show Existing Banner Image
         const bannerPreview = document.getElementById("thumbnailPreview");
@@ -431,6 +452,7 @@ const loadEditBannerData = async (bannerId) => {
         console.error("Error loading banner data:", error.message);
     }
 };
+
 // ✅ Function to Update Video Preview
 function updateVideoPreview(videoUrl) {
     if (videoUrl) {
@@ -452,7 +474,7 @@ function generateUniqueId(prefix = 'btn') {
 // function to handle admin logout
 async function adminLogout() {
     try {
-        const response = await fetch(`/api/admin/logout`, {
+        const response = await fetch(`/api/admin/logout?r=admin`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -472,7 +494,7 @@ async function adminLogout() {
 
 // Function to load user data and display it in the table
 async function loadUserData(page = 1, limit = 10) {
-    const data = await fetchData(`/api/admin-users`);
+    const data = await fetchData(`/api/admin-users?r=admin`);
     if (!data) return;
 
     const tbody = document.getElementById('t-body');
@@ -536,7 +558,7 @@ async function loadUserData(page = 1, limit = 10) {
 };
 // funtion to load video data and display it on video section
 async function loadVideoData(page = 1, limit = 12) {
-    const data = await fetchData(`/api/videos/admin`);
+    const data = await fetchData(`/api/videos/admin?r=admin`);
     if (!data) return;
 
     const videoRow = document.getElementById('video-row');
@@ -591,7 +613,7 @@ async function loadVideoData(page = 1, limit = 12) {
 };
 // function to load article data and display it on article section
 async function loadArticleData(page = 1, limit = 12) {
-    const data = await fetchData(`/api/admin-articles`);
+    const data = await fetchData(`/api/admin-articles?r=admin`);
     if (!data) return;
 
     const articleRow = document.getElementById('article-row');
@@ -651,7 +673,7 @@ async function loadArticleData(page = 1, limit = 12) {
 };
 // function to load story data and display it on story section
 async function loadStoryData(page = 1, limit = 12) {
-    const data = await fetchData(`/api/admin-stories`);
+    const data = await fetchData(`/api/admin-stories?r=admin`);
     if (!data) return;
 
     const storyRow = document.getElementById('story-row');
@@ -708,7 +730,7 @@ async function loadStoryData(page = 1, limit = 12) {
 };
 // function to load category data and display it on category section
 async function loadCategoryData(page = 1, limit = 12) {
-    const data = await fetchData(`/api/categories`);
+    const data = await fetchData(`/api/categories?r=admin`);
     if (!data) return;
 
     const categoryRow = document.getElementById('category-row');
@@ -764,7 +786,7 @@ async function loadCategoryData(page = 1, limit = 12) {
 };
 // function to laod subscription data and display it on subscription section
 async function loadSubscriptionData() {
-    const data = await fetchData(`/api/subscription-plans`);
+    const data = await fetchData(`/api/subscription-plans?r=admin`);
     if (!data) return;
 
     const tableBody = document.getElementById('planTableBody');
@@ -836,9 +858,9 @@ async function loadSubscriptionData() {
         tableBody.appendChild(row);
     });
 };
-// functionn to load coupon data and display it on coupon section
-async function laodCouponData() {
-    const data = await fetchData(`/api/coupons`);
+// function to load coupon data and display it on coupon section
+async function loadCouponData() {
+    const data = await fetchData(`/api/coupons?r=admin`);
     if (!data) return;
 
     const tableBody = document.getElementById('couponTableBody');
@@ -850,82 +872,121 @@ async function laodCouponData() {
         const month = date.getMonth() + 1;
         const year = date.getFullYear();
 
-        const row = `
-          <tr>
-            <td>${coupon.code}</td>
-            <td>${day}/${month}/${year}</td>
-            <td><span class="badge bg-${coupon.status === 'active' ? 'success' : 'danger'}">${coupon.status}</span></td>
-            <td>
-              <div class="d-flex justify-content-start">
-                <button class="btn btn-secondary btn-sm me-2 edit-class" 
-                    data-id="${coupon._id}"
-                    data-section-id="coupons" 
-                    data-form-id="edit-coupon"
-                    data-back-btn-id="back-coupon-btn_"
-                    data-edit-btn-id="couponForm_">Edit
-                </button>
+        const row = document.createElement('tr');
 
-                <button class="btn btn-danger btn-sm" 
-                    onclick="showDeletePopup('${coupon._id}', 'coupon')" 
-                    data-id="${coupon._id}">Delete
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-        tableBody.insertAdjacentHTML('beforeend', row);
+        // Code
+        const codeCell = document.createElement('td');
+        codeCell.textContent = coupon.code;
+
+        // Expiry Date
+        const dateCell = document.createElement('td');
+        dateCell.textContent = `${day}/${month}/${year}`;
+
+        // Status
+        const statusCell = document.createElement('td');
+        const statusBadge = document.createElement('span');
+        statusBadge.className = `badge bg-${coupon.status === 'active' ? 'success' : 'danger'}`;
+        statusBadge.textContent = coupon.status;
+        statusCell.appendChild(statusBadge);
+
+        // Actions
+        const actionCell = document.createElement('td');
+        const actionDiv = document.createElement('div');
+        actionDiv.className = "d-flex justify-content-start";
+
+        const editButton = document.createElement('button');
+        editButton.className = "btn btn-secondary btn-sm me-2 edit-class";
+        editButton.textContent = "Edit";
+        editButton.setAttribute('data-id', coupon._id);
+        editButton.setAttribute('data-section-id', 'coupons');
+        editButton.setAttribute('data-form-id', 'edit-coupon');
+        editButton.setAttribute('data-back-btn-id', 'back-coupon-btn_');
+        editButton.setAttribute('data-edit-btn-id', 'couponForm_');
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = "btn btn-danger btn-sm";
+        deleteButton.textContent = "Delete";
+        deleteButton.setAttribute('data-id', coupon._id);
+        deleteButton.addEventListener("click", () => showDeletePopup(coupon._id, 'coupon'));
+
+        actionDiv.appendChild(editButton);
+        actionDiv.appendChild(deleteButton);
+        actionCell.appendChild(actionDiv);
+
+        // Append all cells
+        row.appendChild(codeCell);
+        row.appendChild(dateCell);
+        row.appendChild(statusCell);
+        row.appendChild(actionCell);
+
+        tableBody.appendChild(row);
     });
 };
 // function to load the banner data and display it on banner section
-async function laodBannerData(page = 1, limit = 12) {
-    const data = await fetchData(`/api/banners`);
+async function loadBannerData(page = 1, limit = 12) {
+    const data = await fetchData(`/api/banners?r=admin`);
     if (!data) return;
-
-    function createBannerHtml(banner) {
-        return `
-            <div class="col-md-4 mb-3">
-                <div class="card">
-                    <img src="${banner.imageUrl}" class="img-fluid rounded" alt="banner img" />
-                    <div class="card-body">
-                        <button class="btn btn-success btn-sm me-1 edit-class" 
-                            data-id="${banner._id}"
-                            data-section-id="banners" 
-                            data-form-id="edit_banner"
-                            data-back-btn-id="back-bnner-btn_"
-                            data-edit-btn-id="bannerForm_">Edit
-                        </button>
-                        <button class="btn btn-danger btn-sm" 
-                            onclick="showDeletePopup('${banner._id}', 'banner')" 
-                            data-id="${banner._id}">Delete
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    };
 
     const container = document.getElementById('banners-container');
     container.innerHTML = '';
 
-    let rowHtml = '';
-    data.data.forEach((banner, index) => {
-        rowHtml += createBannerHtml(banner);
+    let rowDiv = document.createElement('div');
+    rowDiv.className = "row";
 
-        // Every 2 banners, create a new row
+    data.data.forEach((banner, index) => {
+        const colDiv = document.createElement('div');
+        colDiv.className = "col-md-4 mb-3";
+
+        const cardDiv = document.createElement('div');
+        cardDiv.className = "card";
+
+        const img = document.createElement('img');
+        img.src = banner.imageUrl;
+        img.alt = "banner img";
+        img.className = "img-fluid rounded";
+
+        const cardBody = document.createElement('div');
+        cardBody.className = "card-body";
+
+        const editButton = document.createElement('button');
+        editButton.className = "btn btn-success btn-sm me-1 edit-class";
+        editButton.textContent = "Edit";
+        editButton.setAttribute('data-id', banner._id);
+        editButton.setAttribute('data-section-id', 'banners');
+        editButton.setAttribute('data-form-id', 'edit_banner');
+        editButton.setAttribute('data-back-btn-id', 'back-bnner-btn_');
+        editButton.setAttribute('data-edit-btn-id', 'bannerForm_');
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = "btn btn-danger btn-sm";
+        deleteButton.textContent = "Delete";
+        deleteButton.setAttribute('data-id', banner._id);
+        deleteButton.addEventListener("click", () => showDeletePopup(banner._id, 'banner'));
+
+        cardBody.appendChild(editButton);
+        cardBody.appendChild(deleteButton);
+
+        cardDiv.appendChild(img);
+        cardDiv.appendChild(cardBody);
+        colDiv.appendChild(cardDiv);
+        rowDiv.appendChild(colDiv);
+
+        // Every 3 banners, start a new row
         if ((index + 1) % 3 === 0) {
-            container.innerHTML += `<div class="row">${rowHtml}</div>`;
-            rowHtml = '';
-        };
+            container.appendChild(rowDiv);
+            rowDiv = document.createElement('div');
+            rowDiv.className = "row";
+        }
     });
 
-    // Add any remaining banners
-    if (rowHtml) {
-        container.innerHTML += `<div class="row">${rowHtml}</div>`;
-    };
+    // Append any remaining
+    if (rowDiv.children.length > 0) {
+        container.appendChild(rowDiv);
+    }
 };
 // function to load the category option and display it on video cateogory option
 async function loadCategoryOption() {
-    const data = await fetchData(`/api/categories`);
+    const data = await fetchData(`/api/categories?r=admin`);
     if (!data) return;
 
     const selectElement = document.querySelector('.category_option');
@@ -963,16 +1024,16 @@ async function updateDashboardElement(url, Data) {
 };
 // function to laod the admin profile data and display it on admin profile section
 async function laodAdminProfileData() {
-    const data = await fetchData(`/api/admin/profile`);
+    const data = await fetchData(`/api/admin/profile?r=admin`);
     if (!data) return;
     document.getElementById('name').value = data.data.name;
     document.getElementById('admin_email').value = data.data.email;
-    document.getElementById('profileImage').src = data.data.profileUrl;
-    document.getElementById('admin-profile-icon').src = data.data.profileUrl;
+    document.getElementById('profileImage').src = data.data.imageUrl;
+    document.getElementById('admin-profile-icon').src = data.data.imageUrl;
 };
 // function to load the terms and condition data
 async function loadTermsData() {
-    const data = await fetchData(`/api/terms`);
+    const data = await fetchData(`/api/terms?r=admin`);
     if (!data) return;
     document.getElementById('termsText').value = data.data.content;
 };
@@ -1001,53 +1062,6 @@ async function fetchData(url) {
         return await response.json();
     } catch (error) {
         console.error('Fetch error: ', error);
-    };
-};
-// Function to handle form submission
-async function handleFormSubmission(
-    form, url, processBtnId, submitBtnId, dataLoadCallback, method = 'POST', isJson = false
-) {
-    try {
-        toggleProcessBtn(submitBtnId, processBtnId, true);
-
-        let body;
-        let headers = {};
-
-        if (isJson) {
-            const formDataObj = {};
-            new FormData(form).forEach((value, key) => {
-                formDataObj[key] = value;
-            });
-            body = JSON.stringify(formDataObj);
-            headers["Content-Type"] = "application/json";
-        } else {
-            body = new FormData(form);
-        };
-
-        const response = await fetch(`${url}`, {
-            method,
-            body: body,
-            headers: headers,
-            credentials: "include",
-        });
-        const data = await response.json();
-
-        if (response.status === 401) {
-            window.location.href = `/admin`;
-        }
-
-        if (response.ok) {
-            showModalWithMessage(data.message);
-            form.reset();
-            dataLoadCallback();
-        } else {
-            handleApiError(data);
-        }
-    } catch (error) {
-        console.error("Error:", error);
-        showModalWithMessage(error.message || 'An unexpected error occurred.');
-    } finally {
-        toggleProcessBtn(submitBtnId, processBtnId, false);
     };
 };
 // setting submission 
@@ -1086,7 +1100,7 @@ async function submitSettingForm(form, url, sendAsJsonArray = false) {
 // function to fetch the setting data frome db
 async function fetchSettingData() {
     try {
-        const response = await fetch(`/api/settings`, {
+        const response = await fetch(`/api/settings?r=admin`, {
             credentials: 'include',
         });
 
@@ -1135,6 +1149,230 @@ function handleApiError(data) {
     }
     showModalWithMessage(errorMessage, "error");
 };
+// ✅ Handle Form Submission (text + files)
+async function handleFormSubmission(
+    form, url, processBtnId, submitBtnId, dataLoadCallback,
+    method, uploadImage, uploadVideo
+) {
+    try {
+        toggleProcessBtn(submitBtnId, processBtnId, true);
+
+        // ✅ Collect text fields only
+        const formDataObj = {};
+        new FormData(form).forEach((value, key) => {
+            const inputEl = form.querySelector(`[name="${key}"]`);
+            if (inputEl && inputEl.type !== "file") {
+                if (key === "features") {
+                    // agar already hai to push karo, warna new array banao
+                    if (!formDataObj.features) {
+                        formDataObj.features = [];
+                    }
+                    formDataObj.features.push(value);
+                } else {
+                    formDataObj[key] = value;
+                }
+            }
+        });
+
+        // ✅ Get dynamic data_collection from any input in form
+        const collectionInput = form.querySelector("[data-collection]");
+        if (collectionInput) {
+            formDataObj["data_collection"] = collectionInput.dataset.collection;
+        }
+
+        // ✅ Submit text fields first
+        const response = await fetch(url, {
+            method,
+            body: JSON.stringify(formDataObj),
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+        });
+
+        const data = await response.json();
+        if (response.status === 401) window.location.href = `/admin`;
+
+        if (response.ok) {
+            const collectionName = formDataObj["data_collection"];
+            const documentId = data.data._id;
+
+            if (method === "PUT" && (uploadImage || uploadVideo)) {
+                const hasNewImage = form.querySelector("input[type='file'][name='imageUrl']")?.files.length > 0;
+                const hasNewVideo = form.querySelector("input[type='file'][name='videoUrl']")?.files.length > 0;
+                const hasNewThumbnail = form.querySelector("input[type='file'][name='thumbnailUrl']")?.files.length > 0;
+
+                // ✅ Extract old publicIds safely
+                const oldPublicIds = {
+                    image: data?.data?.publicId || null,
+                    thumbnail: data?.data?.thumbnailPublicId || null,
+                    video: data?.data?.videoPublicId || null,
+                };
+
+                // ✅ Delete only if new file uploaded AND old exists
+                if (hasNewImage && oldPublicIds.image) {
+                    await deleteMedia(oldPublicIds.image, "image");
+                    console.log("Old image deleted");
+                }
+
+                if (hasNewVideo && oldPublicIds.video) {
+                    await deleteMedia(oldPublicIds.video, "video");
+                    console.log("Old video deleted");
+                }
+
+                if (hasNewThumbnail && oldPublicIds.thumbnail) {
+                    // If thumbnails are always tied to video, keep "image" if backend expects it
+                    await deleteMedia(oldPublicIds.thumbnail, "image");
+                    console.log("Old thumbnail deleted");
+                }
+            };
+
+            // ✅ Upload image if required
+            if (uploadImage) {
+                const imageInput = form.querySelector(`input[type="file"][name="imageUrl"]`);
+                if (imageInput?.files?.length) {
+                    await handleFileUpload(
+                        imageInput.files[0],
+                        "image",
+                        documentId,
+                        collectionName
+                    );
+                }
+            };
+
+            // ✅ Upload video + thumbnail if required
+            if (uploadVideo) {
+                const videoInput = form.querySelector(`input[type="file"][name="videoUrl"]`);
+                const thumbInput = form.querySelector(`input[type="file"][name="thumbnailUrl"]`);
+
+                if (videoInput?.files?.length) {
+                    const videoFile = videoInput.files[0];
+                    const thumbFile = thumbInput?.files?.length ? thumbInput.files[0] : null;
+
+                    await handleFileUpload(
+                        videoFile,
+                        "video",
+                        documentId,
+                        collectionName,
+                        null,
+                        thumbFile // pass thumbnail file also
+                    );
+                }
+            };
+
+            showModalWithMessage(data.message);
+            form.reset();
+            if (typeof dataLoadCallback === "function") dataLoadCallback();
+        } else {
+            handleApiError(data);
+        }
+    } catch (error) {
+        console.error("❌ Form Error:", error);
+        showModalWithMessage(error.message || "An unexpected error occurred.");
+    } finally {
+        toggleProcessBtn(submitBtnId, processBtnId, false);
+    }
+};
+// ✅ Handle File Upload (Image or Video)
+async function handleFileUpload(file, type = "image", documentId, collectionName, imageField = null, thumbFile = null) {
+    try {
+        // Upload main file (image or video)
+        const uploadUrl = type === "image"
+            ? "/api/upload/image?r=admin"
+            : "/api/upload/video?r=admin";
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const uploadResponse = await fetch(uploadUrl, {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+        });
+
+        if (!uploadResponse.ok) throw new Error("File upload failed");
+        const uploadedData = await uploadResponse.json();
+
+        console.log(`✅ ${type} Uploaded:`, uploadedData);
+
+        // ✅ Build metadata
+        const metadata = {
+            document_id: documentId,
+            collection_name: collectionName,
+            type
+        };
+
+        if (type === "image") {
+            metadata.secure_url = uploadedData.data.url;
+            metadata.public_id = uploadedData.data.public_id;
+        }
+
+        if (type === "video") {
+            metadata.secure_url = uploadedData.data.url;
+            metadata.public_id = uploadedData.data.public_id;
+
+            // If thumbnail is provided, upload it also
+            if (thumbFile) {
+                const thumbForm = new FormData();
+                thumbForm.append("file", thumbFile);
+
+                const thumbResponse = await fetch("/api/upload/image?r=admin", {
+                    method: "POST",
+                    body: thumbForm,
+                    credentials: "include",
+                });
+
+                if (!thumbResponse.ok) throw new Error("Thumbnail upload failed");
+                const thumbData = await thumbResponse.json();
+
+                metadata.thumbnail_url = thumbData.data.url;
+                metadata.thumbnail_public_id = thumbData.data.public_id;
+            }
+        }
+
+        return await submitUploadData(metadata);
+    } catch (error) {
+        console.error(`❌ ${type} Upload Error:`, error.message);
+        showModalWithMessage(error.message || `Failed to upload ${type}`);
+        return null;
+    }
+};
+// ✅ Save Upload Metadata to Backend
+async function submitUploadData(data) {
+    try {
+        const response = await fetch("/api/upload/save?r=admin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+            credentials: "include",
+        });
+
+        if (!response.ok) throw new Error("Failed to save upload data");
+
+        const result = await response.json();
+        console.log("✅ Upload Data Saved:", result);
+        return result;
+    } catch (error) {
+        console.error("❌ Metadata Save Error:", error.message);
+        return null;
+    }
+};
+// ✅ delete image or video
+async function deleteMedia(public_id, type) {
+    if (!public_id) return; // skip if no public_id
+
+    try {
+        const response = await apiCall({
+            url: "/api/upload/media?r=admin",
+            method: "DELETE",
+            data: { public_id, type }
+        });
+
+        console.log(`✅ ${type} deleted:`);
+        return response;
+    } catch (error) {
+        console.error("❌ Error deleting media:", error);
+        throw error;
+    }
+};
 
 // Initialize data loading
 const functionMappings = {
@@ -1144,8 +1382,8 @@ const functionMappings = {
     '#story-row': loadStoryData,
     '#category-row': loadCategoryData,
     '#planTableBody': loadSubscriptionData,
-    '#couponTableBody': laodCouponData,
-    '#banners-container': laodBannerData,
+    '#couponTableBody': loadCouponData,
+    '#banners-container': loadBannerData,
     '#settings': fetchSettingData,
     '#video-form': loadCategoryOption,
     '#admin_profile': laodAdminProfileData,
@@ -1160,7 +1398,7 @@ const executeIfElementExists = () => {
     });
 };
 // get data
-const url = `/api/dashboard/summary`;
+const url = `/api/dashboard/summary?r=admin`;
 const Data = {
     "total_user": "totalUsers",
     "total_video": "totalVideos",
@@ -1292,10 +1530,13 @@ if (doesElementExist('#video-form')) {
         e.preventDefault();
         handleFormSubmission(
             e.target,
-            "/api/videos/admin",
+            "/api/videos/admin?r=admin",
             'video-process-btn',
             'add-video-btn',
-            loadVideoData
+            loadVideoData,
+            'POST',
+            true,
+            true,
         );
     });
 };
@@ -1304,10 +1545,13 @@ if (doesElementExist('#article-form')) {
         e.preventDefault();
         handleFormSubmission(
             e.target,
-            "/api/admin-articles",
+            "/api/admin-articles?r=admin",
             'process-btn',
             'article__btn',
-            loadArticleData
+            loadArticleData,
+            'POST',
+            true,
+            false,
         );
     });
 };
@@ -1316,12 +1560,13 @@ if (doesElementExist('#adduser__')) {
         e.preventDefault();
         handleFormSubmission(
             e.target,
-            "/api/admin-users",
+            "/api/admin-users?r=admin",
             'user-process-btn',
             'add_user_btn',
             loadUserData,
-            "POST",
-            true,
+            'POST',
+            false,
+            false,
         );
     });
 };
@@ -1330,10 +1575,13 @@ if (doesElementExist('#categoryForm')) {
         e.preventDefault();
         handleFormSubmission(
             e.target,
-            "/api/categories",
+            "/api/categories?r=admin",
             'category-process-btn',
             'add-category-btn',
-            loadCategoryData
+            loadCategoryData,
+            'POST',
+            true,
+            false,
         );
     });
 };
@@ -1342,10 +1590,13 @@ if (doesElementExist('#addNew_story')) {
         e.preventDefault();
         handleFormSubmission(
             e.target,
-            "/api/admin-stories",
+            "/api/admin-stories?r=admin",
             'story-process-btn',
             'addNew_story-btn',
-            loadStoryData
+            loadStoryData,
+            'POST',
+            true,
+            false,
         );
     });
 };
@@ -1354,12 +1605,13 @@ if (doesElementExist('#add-new_subscription')) {
         e.preventDefault();
         handleFormSubmission(
             e.target,
-            "/api/subscription-plans",
+            "/api/subscription-plans?r=admin",
             'subscription-process-btn',
             'addNew_subscription-btn',
             loadSubscriptionData,
-            "POST",
-            true,
+            'POST',
+            false,
+            false,
         );
     });
 };
@@ -1368,12 +1620,13 @@ if (doesElementExist('#couponForm')) {
         e.preventDefault();
         handleFormSubmission(
             e.target,
-            "/api/coupons",
+            "/api/coupons?r=admin",
             'coupon-process-btn',
             'add-new-coupon-btn',
-            laodCouponData,
-            "POST",
-            true,
+            loadCouponData,
+            'POST',
+            false,
+            false,
         );
     });
 };
@@ -1382,10 +1635,13 @@ if (doesElementExist('#bannerForm')) {
         e.preventDefault();
         handleFormSubmission(
             e.target,
-            "/api/banners",
+            "/api/banners?r=admin",
             'banner-process-btn',
             'add_new-banner-btn',
-            laodBannerData,
+            loadBannerData,
+            'POST',
+            true,
+            false,
         );
     });
 };
@@ -1394,11 +1650,13 @@ if (doesElementExist('#admin_profile_form')) {
         e.preventDefault();
         handleFormSubmission(
             e.target,
-            "/api/admin/profile",
+            "/api/admin/profile?r=admin",
             'profile-process-btn',
             'save-profile',
             laodAdminProfileData,
             'PUT',
+            true,
+            false,
         );
     });
 };
@@ -1471,9 +1729,16 @@ if (doesElementExist('#imageUpload')) {
         };
     });
 };
-// admin logout
+// admin logout-1
 if (doesElementExist('#logout-btn')) {
     document.getElementById('logout-btn').addEventListener('click', function (e) {
+        e.preventDefault();
+        adminLogout();
+    });
+};
+// admin logout-2
+if (doesElementExist('#logout-btn-2')) {
+    document.getElementById('logout-btn-2').addEventListener('click', function (e) {
         e.preventDefault();
         adminLogout();
     });
@@ -1485,7 +1750,7 @@ if (doesElementExist('#razorpayForm')) {
         e.preventDefault();
         submitSettingForm(
             e.target,
-            `/api/settings`,
+            `/api/settings?r=admin`,
             true,
         );
     });
@@ -1495,7 +1760,7 @@ if (doesElementExist('#smtp-form')) {
         e.preventDefault();
         submitSettingForm(
             e.target,
-            `/api/settings`,
+            `/api/settings?r=admin`,
             true,
         );
     });
@@ -1505,7 +1770,7 @@ if (doesElementExist('#socialSettingform')) {
         e.preventDefault();
         submitSettingForm(
             e.target,
-            `/api/settings`,
+            `/api/settings?r=admin`,
             true,
         );
     });
@@ -1515,7 +1780,7 @@ if (doesElementExist('#cloudinaryForm')) {
         e.preventDefault();
         submitSettingForm(
             e.target,
-            `/api/settings`,
+            `/api/settings?r=admin`,
             true,
         );
     });
@@ -1524,7 +1789,7 @@ if (doesElementExist('#submitTerms')) {
     document.getElementById('submitTerms').addEventListener('click', async () => {
         const termsText = document.getElementById('termsText').value;
         try {
-            const response = await fetch('/api/terms', {
+            const response = await fetch('/api/terms?r=admin', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1551,11 +1816,13 @@ if (doesElementExist('#video-form_')) {
         const editId = e.target.getAttribute('data-edit-id');
         handleFormSubmission(
             e.target,
-            `/api/videos/admin/${editId}`,
+            `/api/videos/admin/${editId}?r=admin`,
             'video-process-btn_',
             'edit-video-btn',
             loadVideoData,
-            "PUT"
+            "PUT",
+            true,
+            true,
         );
     });
 };
@@ -1565,11 +1832,13 @@ if (doesElementExist('#article-form_')) {
         const editId = e.target.getAttribute('data-edit-id');
         handleFormSubmission(
             e.target,
-            `/api/admin-articles/${editId}`,
+            `/api/admin-articles/${editId}?r=admin`,
             'process-btn_',
             'edit-article__btn',
             loadArticleData,
-            "PUT"
+            "PUT",
+            true,
+            false,
         );
     });
 };
@@ -1579,12 +1848,13 @@ if (doesElementExist('#edit-user__')) {
         const editId = e.target.getAttribute('data-edit-id');
         handleFormSubmission(
             e.target,
-            `/api/admin-users/${editId}`,
+            `/api/admin-users/${editId}?r=admin`,
             'user-process-btn_',
             'edit_user_btn',
             loadUserData,
             "PUT",
-            true,
+            false,
+            false,
         );
     });
 };
@@ -1594,11 +1864,12 @@ if (doesElementExist('#categoryForm_')) {
         const editId = e.target.getAttribute('data-edit-id');
         handleFormSubmission(
             e.target,
-            `/api/categories/${editId}`,
+            `/api/categories/${editId}?r=admin`,
             'category-process-btn_',
             'edit-category-btn',
             loadCategoryData,
-            "PUT"
+            "PUT",
+            true,
         );
     });
 };
@@ -1608,11 +1879,13 @@ if (doesElementExist('#_edit_story')) {
         const editId = e.target.getAttribute('data-edit-id');
         handleFormSubmission(
             e.target,
-            `/api/admin-stories/${editId}`,
+            `/api/admin-stories/${editId}?r=admin`,
             'story-process-btn_',
             'edit_story-btn',
             loadStoryData,
-            "PUT"
+            "PUT",
+            true,
+            false,
         );
     });
 };
@@ -1622,12 +1895,13 @@ if (doesElementExist('#edit_subscription_')) {
         const editId = e.target.getAttribute('data-edit-id');
         handleFormSubmission(
             e.target,
-            `/api/subscription-plans/${editId}`,
+            `/api/subscription-plans/${editId}?r=admin`,
             'subscription-process-btn_',
             'edit_subscription-btn',
             loadSubscriptionData,
             "PUT",
-            true,
+            false,
+            false,
         );
     });
 };
@@ -1637,12 +1911,13 @@ if (doesElementExist('#couponForm_')) {
         const editId = e.target.getAttribute('data-edit-id');
         handleFormSubmission(
             e.target,
-            `/api/coupons/${editId}`,
+            `/api/coupons/${editId}?r=admin`,
             'coupon-process-btn_',
             'edit-coupon-btn',
-            laodCouponData,
+            loadCouponData,
             "PUT",
-            true,
+            false,
+            false,
         );
     });
 };
@@ -1652,11 +1927,13 @@ if (doesElementExist('#bannerForm_')) {
         const editId = e.target.getAttribute('data-edit-id');
         handleFormSubmission(
             e.target,
-            `/api/banners/${editId}`,
+            `/api/banners/${editId}?r=admin`,
             'banner-process-btn_',
             'edit-banner-btn',
-            laodBannerData,
-            "PUT"
+            loadBannerData,
+            "PUT",
+            true,
+            false,
         );
     });
 };
@@ -1714,14 +1991,14 @@ async function showDeletePopup(itemId, sectionId) {
         spinner.classList.remove('d-none');
 
         const apiEndpoints = {
-            video: `/api/videos/admin/${itemId}`,
-            article: `/api/admin-articles/${itemId}`,
-            user: `/api/admin-users/${itemId}`,
-            category: `/api/categories/${itemId}`,
-            story: `/api/admin-stories/${itemId}`,
-            subscription: `/api/subscription-plans/${itemId}`,
-            coupon: `/api/coupons/${itemId}`,
-            banner: `/api/banners/${itemId}`,
+            video: `/api/videos/admin/${itemId}?r=admin`,
+            article: `/api/admin-articles/${itemId}?r=admin`,
+            user: `/api/admin-users/${itemId}?r=admin`,
+            category: `/api/categories/${itemId}?r=admin`,
+            story: `/api/admin-stories/${itemId}?r=admin`,
+            subscription: `/api/subscription-plans/${itemId}?r=admin`,
+            coupon: `/api/coupons/${itemId}?r=admin`,
+            banner: `/api/banners/${itemId}?r=admin`,
         };
 
         if (!apiEndpoints[sectionId]) return;
@@ -1737,8 +2014,8 @@ async function showDeletePopup(itemId, sectionId) {
                 category: loadCategoryData,
                 story: loadStoryData,
                 subscription: loadSubscriptionData,
-                coupon: laodCouponData,
-                banner: laodBannerData
+                coupon: loadCouponData,
+                banner: loadBannerData
             };
             refreshFunctions[sectionId]?.();
         } else {
@@ -1775,7 +2052,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const listEl = document.getElementById("latestUsers");
     if (!listEl) return;
 
-    const result = await fetchData('/api/dashboard/latest');
+    const result = await fetchData('/api/dashboard/latest?r=admin');
 
     if (!result.success || !Array.isArray(result.data) || result.data.length === 0) {
         listEl.innerHTML = `

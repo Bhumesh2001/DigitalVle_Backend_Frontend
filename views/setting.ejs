@@ -86,7 +86,7 @@
                       Profile</a
                     >
                   </li>
-                  
+
                   <li>
                     <hr class="dropdown-divider border border-secondary" />
                   </li>
@@ -274,13 +274,13 @@
                       <a
                         draggable="false"
                         class="nav-bar-link"
-                        id="smtp-tab"
+                        id="sendgrid-tab"
                         data-bs-toggle="tab"
-                        href="#smtp"
+                        href="#sendgrid"
                         role="tab"
                         aria-controls="smtp"
                         aria-selected="false"
-                        >Smtp Email</a
+                        >Sendgrid</a
                       >
                     </li>
 
@@ -367,74 +367,40 @@
                       </form>
                     </div>
 
-                    <!-- SMTP Email Section -->
+                    <!-- Sendgrid Section -->
                     <div
                       class="tab-pane fade content-box"
-                      id="smtp"
+                      id="sendgrid"
                       role="tabpanel"
-                      aria-labelledby="smtp-tab"
+                      aria-labelledby="sendgrid-tab"
                     >
                       <form id="smtp-form">
                         <div class="mb-3">
-                          <label for="SMTP_HOST" class="form-label"
-                            >SMTP Host</label
+                          <label for="SENDGRID_API_KEY" class="form-label"
+                            >Sendgrid Api Key</label
                           >
                           <input
                             type="text"
                             class="form-control"
-                            id="SMTP_HOST"
-                            placeholder="Enter SMTP host"
+                            id="SENDGRID_API_KEY"
+                            placeholder="Enter Sendgrid Api Key"
                             required
-                            name="SMTP_HOST"
+                            name="SENDGRID_API_KEY"
                           />
                         </div>
 
                         <div class="mb-3">
-                          <label for="SMTP_PORT" class="form-label"
-                            >SMTP Port</label
-                          >
-                          <input
-                            type="number"
-                            class="form-control"
-                            id="SMTP_PORT"
-                            placeholder="Enter SMTP port"
-                            required
-                            name="SMTP_PORT"
-                          />
-                        </div>
-
-                        <div class="mb-3">
-                          <label for="SMTP_EMAIL" class="form-label"
-                            >SMTP Email</label
+                          <label for="FROM_EMAIL" class="form-label"
+                            >From Email</label
                           >
                           <input
                             type="text"
                             class="form-control"
-                            id="SMTP_EMAIL"
-                            placeholder="Enter SMTP email"
+                            id="FROM_EMAIL"
+                            placeholder="Enter email"
                             required
-                            name="SMTP_EMAIL"
+                            name="FROM_EMAIL"
                           />
-                        </div>
-
-                        <div class="mb-3">
-                          <label for="SMTP_PASSWORD" class="form-label"
-                            >SMTP Password</label
-                          >
-                          <div class="password-container">
-                            <input
-                              type="password"
-                              class="form-control"
-                              id="SMTP_PASSWORD"
-                              placeholder="Enter SMTP password"
-                              required
-                              name="SMTP_PASSWORD"
-                            />
-                            <i
-                              class="fas fa-eye toggle-password"
-                              id="toggle-pass"
-                            ></i>
-                          </div>
                         </div>
 
                         <button type="submit" class="btn btn-danger btn-sm">

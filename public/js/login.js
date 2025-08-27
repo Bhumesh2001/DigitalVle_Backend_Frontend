@@ -27,7 +27,7 @@ document.getElementById('loginForm').addEventListener('submit', async function (
         await response.json();
 
         if (response.ok) {
-            window.location.href = `/admin/dashboard`;
+            window.location.href = `/admin/dashboard?r=admin`;
             document.getElementById('loginForm').reset();
             removedisabledButton();
         } else {

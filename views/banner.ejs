@@ -265,11 +265,25 @@
                   <h2 class="h2 text-center heading">Add New Banner</h2>
                   <form id="bannerForm" enctype="multipart/form-data">
                     <div class="mb-3">
+                      <label for="name" class="form-label">Name</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="name"
+                        placeholder="Enter name"
+                        required
+                        name="name"
+                        autocomplete="off"
+                      />
+                    </div>
+
+                    <div class="mb-3">
                       <label for="bannerLink" class="form-label">Image</label>
                       <input
                         type="file"
                         class="form-control"
                         id="bannerLink"
+                        data-collection="Banner"
                         required
                         name="imageUrl"
                       />
@@ -339,16 +353,34 @@
                   <!-- edit banner from -->
                   <form id="bannerForm_" enctype="multipart/form-data">
                     <div class="mb-3">
+                      <label for="name" class="form-label">Name</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="name_"
+                        placeholder="Enter name"
+                        required
+                        name="name"
+                        autocomplete="off"
+                      />
+                    </div>
+
+                    <div class="mb-3">
                       <label for="bannerLink_" class="form-label">Image</label>
                       <input
                         type="file"
                         class="form-control"
                         id="bannerLink_"
+                        data-collection="Banner"
                         name="imageUrl"
                       />
                     </div>
                     <!-- article preview -->
-                    <img id="thumbnailPreview" class="mb-3" alt="Banner Preview" />
+                    <img
+                      id="thumbnailPreview"
+                      class="mb-3"
+                      alt="Banner Preview"
+                    />
 
                     <div class="mb-3">
                       <label for="bannerStatus_" class="form-label"
