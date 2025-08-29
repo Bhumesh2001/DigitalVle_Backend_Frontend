@@ -20,7 +20,8 @@ const userSchema = new mongoose.Schema({
     mobileNumber: {
         type: String,
         default: null,
-        index: true,
+        unique: true,
+        sparse: true,
     },
     googleId: {
         type: String,

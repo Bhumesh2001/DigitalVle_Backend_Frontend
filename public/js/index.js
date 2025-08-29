@@ -1253,7 +1253,7 @@ async function handleFormSubmission(
                         documentId,
                         collectionName,
                         null,
-                        thumbFile // pass thumbnail file also
+                        thumbFile
                     );
                 }
             };
@@ -1291,7 +1291,7 @@ async function handleFileUpload(file, type = "image", documentId, collectionName
         if (!uploadResponse.ok) throw new Error("File upload failed");
         const uploadedData = await uploadResponse.json();
 
-        console.log(`✅ ${type} Uploaded:`, uploadedData);
+        console.log(`✅ ${type} Uploaded:`);
 
         // ✅ Build metadata
         const metadata = {
