@@ -1337,6 +1337,8 @@ async function handleFileUpload(file, type = "image", documentId, collectionName
 };
 // ✅ Save Upload Metadata to Backend
 async function submitUploadData(data) {
+    console.log(data, '===');
+    
     try {
         const response = await fetch("/api/upload/save?r=admin", {
             method: "POST",
